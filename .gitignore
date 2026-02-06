@@ -1,0 +1,86 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# .NET build outputs
+bin/
+obj/
+out/
+publish/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.vs/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Mac
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Log files
+*.log
+logs/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+db-mongo/
+postgres_data/
+
+# Docker volumes
+data/
+
+# Vercel
+.vercel
+
+# Old NestJS files (can be removed after migration)
+# src/
+# test/
+# dist/
+
+# Coverage
+coverage/
+*.lcov
+
+# TypeScript
+dist/
+
+# Yarn
+yarn-error.log
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz

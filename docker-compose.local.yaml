@@ -1,0 +1,29 @@
+# ==============================================================================
+# DESENVOLVIMENTO LOCAL
+# Apenas PostgreSQL no Docker, API roda localmente com `dotnet run`
+# ==============================================================================
+# Uso: docker-compose -f docker-compose.local.yaml up -d
+
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: psicoflow-db-local
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: psicoflow_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_local_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_local_data:

@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: psicoflow-api
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Database=psicoflow;Username=postgres;Password=postgres
+      - Jwt__Secret=PsicoFlowDockerSecretKey2026AtLeast32CharactersLong!
+      - Jwt__Issuer=PsicoFlow
+      - Jwt__Audience=PsicoFlowUsers
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - psicoflow-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: psicoflow-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: psicoflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - psicoflow-network
+
+networks:
+  psicoflow-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,55 @@
+# ==============================================================================
+# AMBIENTE DEV/STAGING
+# Simula produção: API + PostgreSQL em containers
+# ==============================================================================
+# Uso: docker-compose -f docker-compose.dev.yaml up --build
+
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: psicoflow-api-dev
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+      - ConnectionStrings__DefaultConnection=Host=db;Database=psicoflow_staging;Username=postgres;Password=postgres_staging_2026
+      - Jwt__Secret=PsicoFlowStagingSecretKey2026AtLeast32CharactersLong!
+      - Jwt__Issuer=PsicoFlow
+      - Jwt__Audience=PsicoFlowUsers
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - psicoflow-dev-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: psicoflow-db-dev
+    restart: unless-stopped
+    ports:
+      - "5433:5432" # Porta diferente para não conflitar com local
+    environment:
+      POSTGRES_DB: psicoflow_staging
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_staging_2026
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - psicoflow-dev-network
+
+networks:
+  psicoflow-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
