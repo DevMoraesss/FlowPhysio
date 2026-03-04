@@ -22,7 +22,7 @@ public class PatientsController : ControllerBase
     /// <summary>
     /// Get all patients for current psychologist
     /// </summary>
-    [HttpGet]
+    [HttpGet] // httpGet é um atributo que define que o método é um GET
     [ProducesResponseType(typeof(IEnumerable<PatientResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<PatientResponse>>> GetAll([FromQuery] string? search = null)
     {
@@ -64,8 +64,8 @@ public class PatientsController : ControllerBase
     /// <summary>
     /// Create new patient
     /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status201Created)]
+    [HttpPost] // httpPost é um atributo que define que o método é um POST
+    [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status201Created)] //ProducesResponseType é um atributo que define que o método retorna um tipo específico
     public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatientRequest request)
     {
         var patient = new Patient
