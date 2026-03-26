@@ -1,12 +1,21 @@
-namespace PsicoFlow.Domain.Entities;
+namespace PhysioFlow.Domain.Entities;
 
-public class Attachment : BaseEntity
+public class Attachment
 {
-    public Guid ClinicalRecordId { get; set; }
-    public ClinicalRecord ClinicalRecord { get; set; } = null!;
-    
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public Guid? PatientId { get; set; }
+    public Guid? AssessmentId { get; set; }
+    public Guid? EvolutionId { get; set; }
+
     public string FileName { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;
-    public string? ContentType { get; set; }
+    public string ContentType { get; set; } = string.Empty;
     public long FileSize { get; set; }
+
+    // Navigation properties
+    public Patient? Patient { get; set; }
+    public Assessment? Assessment { get; set; }
+    public Evolution? Evolution { get; set; }
 }

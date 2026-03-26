@@ -18,8 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PsicoFlow.Domain\PsicoFlow.Domain.csproj" />
-    <ProjectReference Include="..\PsicoFlow.Infrastructure\PsicoFlow.Infrastructure.csproj" />
+    <ProjectReference Include="..\PhysioFlow.Domain\PhysioFlow.Domain.csproj" />
+    <ProjectReference Include="..\PhysioFlow.Infrastructure\PhysioFlow.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

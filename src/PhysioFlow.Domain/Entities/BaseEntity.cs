@@ -1,4 +1,4 @@
-namespace PsicoFlow.Domain.Entities;
+namespace PhysioFlow.Domain.Entities;
 
 public abstract class BaseEntity
 {

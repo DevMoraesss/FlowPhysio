@@ -5,11 +5,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4C5F6C94-3A66-406F-B40A-E8FA75B9CBE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsicoFlow.Api", "src\PsicoFlow.Api\PsicoFlow.Api.csproj", "{6F037BC1-A1F5-4EA6-A7BB-1B1618DCFE49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhysioFlow.Api", "src\PhysioFlow.Api\PhysioFlow.Api.csproj", "{6F037BC1-A1F5-4EA6-A7BB-1B1618DCFE49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsicoFlow.Domain", "src\PsicoFlow.Domain\PsicoFlow.Domain.csproj", "{29680F8C-8F77-4D84-827F-A08BF45E01FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhysioFlow.Domain", "src\PhysioFlow.Domain\PhysioFlow.Domain.csproj", "{29680F8C-8F77-4D84-827F-A08BF45E01FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PsicoFlow.Infrastructure", "src\PsicoFlow.Infrastructure\PsicoFlow.Infrastructure.csproj", "{732E0BAC-5A65-4095-81CE-9A362379FDC6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhysioFlow.Infrastructure", "src\PhysioFlow.Infrastructure\PhysioFlow.Infrastructure.csproj", "{732E0BAC-5A65-4095-81CE-9A362379FDC6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

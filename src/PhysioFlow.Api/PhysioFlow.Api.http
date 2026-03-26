@@ -1,6 +1,6 @@
-@PsicoFlow.Api_HostAddress = http://localhost:5037
+@PhysioFlow.Api_HostAddress = http://localhost:5037
 
-GET {{PsicoFlow.Api_HostAddress}}/weatherforecast/
+GET {{PhysioFlow.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###

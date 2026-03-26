@@ -12,7 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: psicoflow-api
+    container_name: PhysioFlow-api
     restart: always
     ports:
       - "80:8080"
@@ -20,13 +20,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=${DATABASE_URL}
       - Jwt__Secret=${JWT_SECRET}
-      - Jwt__Issuer=${JWT_ISSUER:-PsicoFlow}
-      - Jwt__Audience=${JWT_AUDIENCE:-PsicoFlowUsers}
+      - Jwt__Issuer=${JWT_ISSUER:-PhysioFlow}
+      - Jwt__Audience=${JWT_AUDIENCE:-PhysioFlowUsers}
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - psicoflow-prod-network
+      - PhysioFlow-prod-network
     deploy:
       resources:
         limits:
@@ -40,23 +40,23 @@ services:
 
   db:
     image: postgres:16-alpine
-    container_name: psicoflow-db
+    container_name: PhysioFlow-db
     restart: always
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-psicoflow}
-      POSTGRES_USER: ${POSTGRES_USER:-psicoflow_user}
+      POSTGRES_DB: ${POSTGRES_DB:-PhysioFlow}
+      POSTGRES_USER: ${POSTGRES_USER:-PhysioFlow_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-psicoflow_user}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-PhysioFlow_user}" ]
       interval: 30s
       timeout: 10s
       retries: 5
     networks:
-      - psicoflow-prod-network
+      - PhysioFlow-prod-network
     deploy:
       resources:
         limits:
@@ -64,7 +64,7 @@ services:
           memory: 256M
 
 networks:
-  psicoflow-prod-network:
+  PhysioFlow-prod-network:
     driver: bridge
 
 volumes:

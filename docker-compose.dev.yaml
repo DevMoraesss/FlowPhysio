@@ -11,30 +11,30 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: psicoflow-api-dev
+    container_name: PhysioFlow-api-dev
     restart: unless-stopped
     ports:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
-      - ConnectionStrings__DefaultConnection=Host=db;Database=psicoflow_staging;Username=postgres;Password=postgres_staging_2026
-      - Jwt__Secret=PsicoFlowStagingSecretKey2026AtLeast32CharactersLong!
-      - Jwt__Issuer=PsicoFlow
-      - Jwt__Audience=PsicoFlowUsers
+      - ConnectionStrings__DefaultConnection=Host=db;Database=PhysioFlow_staging;Username=postgres;Password=postgres_staging_2026
+      - Jwt__Secret=PhysioFlowStagingSecretKey2026AtLeast32CharactersLong!
+      - Jwt__Issuer=PhysioFlow
+      - Jwt__Audience=PhysioFlowUsers
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - psicoflow-dev-network
+      - PhysioFlow-dev-network
 
   db:
     image: postgres:16-alpine
-    container_name: psicoflow-db-dev
+    container_name: PhysioFlow-db-dev
     restart: unless-stopped
     ports:
       - "5433:5432" # Porta diferente para não conflitar com local
     environment:
-      POSTGRES_DB: psicoflow_staging
+      POSTGRES_DB: PhysioFlow_staging
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_staging_2026
     volumes:
@@ -45,10 +45,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - psicoflow-dev-network
+      - PhysioFlow-dev-network
 
 networks:
-  psicoflow-dev-network:
+  PhysioFlow-dev-network:
     driver: bridge
 
 volumes:

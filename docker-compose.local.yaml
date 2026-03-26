@@ -9,12 +9,12 @@ version: "3.8"
 services:
   db:
     image: postgres:16-alpine
-    container_name: psicoflow-db-local
+    container_name: PhysioFlow-db-local
     restart: unless-stopped
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: psicoflow_dev
+      POSTGRES_DB: PhysioFlow_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:

@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PsicoFlow.Api.DTOs;
-using PsicoFlow.Domain.Entities;
-using PsicoFlow.Domain.Interfaces;
+using PhysioFlow.Api.DTOs;
+using PhysioFlow.Domain.Entities;
+using PhysioFlow.Domain.Interfaces;
 
-namespace PsicoFlow.Api.Controllers;
+namespace PhysioFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -19,73 +19,55 @@ public class PatientsController : ControllerBase
         _patientRepository = patientRepository;
     }
 
-    /// <summary>
-    /// Get all patients for current psychologist
-    /// </summary>
-    [HttpGet] // httpGet é um atributo que define que o método é um GET
+    [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PatientResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<PatientResponse>>> GetAll([FromQuery] string? search = null)
+    public async Task<ActionResult<IEnumerable<PatientResponse>>> GetAll()
     {
-        var psicologoId = GetCurrentUserId();
-        
-        IEnumerable<Patient> patients;
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            patients = await _patientRepository.SearchByNameAsync(search, psicologoId);
-        }
-        else
-        {
-            patients = await _patientRepository.GetByPsicologoIdAsync(psicologoId);
-        }
-
+        var physioId = GetCurrentUserId();
+        var patients = await _patientRepository.GetAllByPhysioAsync(physioId);
         return Ok(patients.Select(MapToResponse));
     }
 
-    /// <summary>
-    /// Get patient by ID
-    /// </summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PatientResponse>> GetById(Guid id)
     {
-        var patient = await _patientRepository.GetByIdAsync(id);
+        var patient = await _patientRepository.GetByIdWithDetailsAsync(id);
         if (patient == null)
             return NotFound();
-
-        // Only allow access to own patients
-        var currentUserId = GetCurrentUserId();
-        if (patient.PsicologoId != currentUserId)
-            return Forbid();
 
         return Ok(MapToResponse(patient));
     }
 
-    /// <summary>
-    /// Create new patient
-    /// </summary>
-    [HttpPost] // httpPost é um atributo que define que o método é um POST
-    [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status201Created)] //ProducesResponseType é um atributo que define que o método retorna um tipo específico
+    [HttpPost]
+    [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status201Created)]
     public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatientRequest request)
     {
+        var physioId = GetCurrentUserId();
+
         var patient = new Patient
         {
-            Name = request.Name,
+            PhysioId = physioId,
+            GuardianId = request.GuardianId,
+            FullName = request.FullName,
             BirthDate = request.BirthDate,
-            Email = request.Email,
+            Cpf = request.Cpf,
             Phone = request.Phone,
-            ResponsibleId = request.ResponsibleId,
-            PsicologoId = GetCurrentUserId()
+            Email = request.Email,
+            ZipCode = request.ZipCode,
+            Street = request.Street,
+            Number = request.Number,
+            Complement = request.Complement,
+            Neighborhood = request.Neighborhood,
+            City = request.City,
+            State = request.State
         };
 
         await _patientRepository.AddAsync(patient);
-        
         return CreatedAtAction(nameof(GetById), new { id = patient.Id }, MapToResponse(patient));
     }
 
-    /// <summary>
-    /// Update patient
-    /// </summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -95,37 +77,34 @@ public class PatientsController : ControllerBase
         if (patient == null)
             return NotFound();
 
-        var currentUserId = GetCurrentUserId();
-        if (patient.PsicologoId != currentUserId)
-            return Forbid();
-
-        if (request.Name != null) patient.Name = request.Name;
-        if (request.BirthDate != null) patient.BirthDate = request.BirthDate;
-        if (request.Email != null) patient.Email = request.Email;
+        if (request.FullName != null) patient.FullName = request.FullName;
         if (request.Phone != null) patient.Phone = request.Phone;
-        if (request.ResponsibleId != null) patient.ResponsibleId = request.ResponsibleId;
+        if (request.Email != null) patient.Email = request.Email;
+        if (request.Cpf != null) patient.Cpf = request.Cpf;
+        if (request.ZipCode != null) patient.ZipCode = request.ZipCode;
+        if (request.Street != null) patient.Street = request.Street;
+        if (request.Number != null) patient.Number = request.Number;
+        if (request.Complement != null) patient.Complement = request.Complement;
+        if (request.Neighborhood != null) patient.Neighborhood = request.Neighborhood;
+        if (request.City != null) patient.City = request.City;
+        if (request.State != null) patient.State = request.State;
+        if (request.GuardianId != null) patient.GuardianId = request.GuardianId;
 
         await _patientRepository.UpdateAsync(patient);
         return Ok(MapToResponse(patient));
     }
 
-    /// <summary>
-    /// Delete patient
-    /// </summary>
-    [HttpDelete("{id:guid}")]
+    [HttpPatch("{id:guid}/deactivate")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> Delete(Guid id)
+    public async Task<ActionResult> Deactivate(Guid id)
     {
         var patient = await _patientRepository.GetByIdAsync(id);
         if (patient == null)
             return NotFound();
 
-        var currentUserId = GetCurrentUserId();
-        if (patient.PsicologoId != currentUserId)
-            return Forbid();
-
-        await _patientRepository.DeleteAsync(id);
+        patient.IsActive = false;
+        await _patientRepository.UpdateAsync(patient);
         return NoContent();
     }
 
@@ -140,14 +119,21 @@ public class PatientsController : ControllerBase
         return new PatientResponse
         {
             Id = patient.Id,
-            Name = patient.Name,
+            FullName = patient.FullName,
             BirthDate = patient.BirthDate,
-            Email = patient.Email,
+            Cpf = patient.Cpf,
             Phone = patient.Phone,
-            PsicologoId = patient.PsicologoId,
-            PsicologoName = patient.Psicologo?.Name,
-            ResponsibleId = patient.ResponsibleId,
-            ResponsibleName = patient.Responsible?.Name,
+            Email = patient.Email,
+            ZipCode = patient.ZipCode,
+            Street = patient.Street,
+            Number = patient.Number,
+            Complement = patient.Complement,
+            Neighborhood = patient.Neighborhood,
+            City = patient.City,
+            State = patient.State,
+            IsActive = patient.IsActive,
+            PhysioId = patient.PhysioId,
+            GuardianId = patient.GuardianId,
             CreatedAt = patient.CreatedAt
         };
     }

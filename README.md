@@ -1,4 +1,7 @@
-# 🧠 PsicoFlow API
+# 🧠 PhysioFlow API
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjUxMTBhYjI2LTI0YzUtNGNkOC1hNzM0LTBhODY3MWM0MDE5ZSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InByaXNjaWxhQHBoeXNpb2Zsb3cuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6IkRyYS4gUHJpc2NpbGEgU2lsdmEiLCJleHAiOjE3NzQ1NzA3NjYsImlzcyI6IlBoeXNpb0Zsb3ciLCJhdWQiOiJQaHlzaW9GbG93VXNlcnMifQ.MZLNLok_gDVfc5OtfWJZkvokNCYspVTBxfWORGtLXq4
+
 
 Sistema de gestão de atendimentos psicológicos — **ASP.NET Core 8** + **PostgreSQL**
 
@@ -34,7 +37,7 @@ Sistema de gestão de atendimentos psicológicos — **ASP.NET Core 8** + **Post
 ### 1. Clone o projeto
 ```bash
 git clone <seu-repo>
-cd PsicoFlow
+cd PhysioFlow
 ```
 
 ### 2. Inicie o banco de dados
@@ -45,7 +48,7 @@ Isso inicia o PostgreSQL na porta `5432`.
 
 ### 3. Execute a API
 ```bash
-dotnet run --project src/PsicoFlow.Api
+dotnet run --project src/PhysioFlow.Api
 ```
 
 ### 4. Acesse
@@ -371,7 +374,7 @@ Acesse **http://localhost:5000/swagger** para documentação interativa.
 
 ```bash
 # Ver logs do banco
-docker logs psicoflow-db-local
+docker logs PhysioFlow-db-local
 
 # Parar o banco
 docker-compose -f docker-compose.local.yaml down
@@ -381,13 +384,13 @@ dotnet clean && dotnet build
 
 # Criar nova migration
 dotnet ef migrations add NomeDaMigration \
-  --project src/PsicoFlow.Infrastructure \
-  --startup-project src/PsicoFlow.Api
+  --project src/PhysioFlow.Infrastructure \
+  --startup-project src/PhysioFlow.Api
 
 # Aplicar migrations manualmente
 dotnet ef database update \
-  --project src/PsicoFlow.Infrastructure \
-  --startup-project src/PsicoFlow.Api
+  --project src/PhysioFlow.Infrastructure \
+  --startup-project src/PhysioFlow.Api
 ```
 
 ---

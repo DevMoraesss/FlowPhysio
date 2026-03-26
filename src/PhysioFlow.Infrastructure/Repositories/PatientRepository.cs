@@ -1,39 +1,28 @@
 using Microsoft.EntityFrameworkCore;
-using PsicoFlow.Domain.Entities;
-using PsicoFlow.Domain.Interfaces;
-using PsicoFlow.Infrastructure.Data;
+using PhysioFlow.Domain.Entities;
+using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Infrastructure.Data;
 
-namespace PsicoFlow.Infrastructure.Repositories;
+namespace PhysioFlow.Infrastructure.Repositories;
 
 public class PatientRepository : Repository<Patient>, IPatientRepository
 {
-    public PatientRepository(PsicoFlowDbContext context) : base(context)
+    public PatientRepository(PhysioFlowDbContext context) : base(context)
     {
     }
 
-    public async Task<IEnumerable<Patient>> GetByPsicologoIdAsync(Guid psicologoId)
+    public async Task<IEnumerable<Patient>> GetAllByPhysioAsync(Guid physioId)
     {
         return await _dbSet
-            .Where(p => p.PsicologoId == psicologoId)
-            .Include(p => p.Responsible)
-            .OrderBy(p => p.Name)
+            .Where(p => p.PhysioId == physioId)
+            .OrderBy(p => p.FullName)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Patient>> SearchByNameAsync(string name, Guid psicologoId)
+    public async Task<Patient?> GetByIdWithDetailsAsync(Guid id)
     {
         return await _dbSet
-            .Where(p => p.PsicologoId == psicologoId && 
-                       p.Name.ToLower().Contains(name.ToLower()))
-            .OrderBy(p => p.Name)
-            .ToListAsync();
-    }
-
-    public override async Task<Patient?> GetByIdAsync(Guid id)
-    {
-        return await _dbSet
-            .Include(p => p.Responsible)
-            .Include(p => p.Psicologo)
+            .Include(p => p.Guardian)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 }

@@ -1,16 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using PsicoFlow.Domain.Entities;
-using PsicoFlow.Domain.Interfaces;
-using PsicoFlow.Infrastructure.Data;
+using PhysioFlow.Domain.Entities;
+using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Infrastructure.Data;
 
-namespace PsicoFlow.Infrastructure.Repositories;
+namespace PhysioFlow.Infrastructure.Repositories;
 
 public class Repository<T> : IRepository<T> where T : BaseEntity
 {
-    protected readonly PsicoFlowDbContext _context;
+    protected readonly PhysioFlowDbContext _context;
     protected readonly DbSet<T> _dbSet;
 
-    public Repository(PsicoFlowDbContext context)
+    public Repository(PhysioFlowDbContext context)
     {
         _context = context;
         _dbSet = context.Set<T>();

@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PsicoFlow.Api.DTOs;
-using PsicoFlow.Api.DTOs.Auth;
-using PsicoFlow.Api.Services;
+using PhysioFlow.Api.DTOs;
+using PhysioFlow.Api.Services;
 
-namespace PsicoFlow.Api.Controllers;
+namespace PhysioFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,9 +15,6 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    /// <summary>
-    /// Authenticate user and return JWT token
-    /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -36,9 +31,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Register a new user
-    /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -50,44 +42,13 @@ public class AuthController : ControllerBase
             return CreatedAtAction(nameof(Register), new UserResponse
             {
                 Id = user.Id,
-                Name = user.Name,
+                FullName = user.FullName,
                 Email = user.Email,
                 Phone = user.Phone,
-                BirthDate = user.BirthDate,
                 Cpf = user.Cpf,
-                Role = user.Role,
+                Crefito = user.Crefito,
                 CreatedAt = user.CreatedAt
             });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// Request password reset email
-    /// </summary>
-    [HttpPost("forgot-password")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
-    {
-        await _authService.ForgotPasswordAsync(request);
-        return Ok(new { message = "Se o email existir, você receberá um link para redefinir a senha" });
-    }
-
-    /// <summary>
-    /// Reset password using token
-    /// </summary>
-    [HttpPost("reset-password")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
-    {
-        try
-        {
-            await _authService.ResetPasswordAsync(request);
-            return Ok(new { message = "Senha redefinida com sucesso" });
         }
         catch (InvalidOperationException ex)
         {

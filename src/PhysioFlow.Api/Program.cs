@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using PsicoFlow.Api.Services;
-using PsicoFlow.Domain.Interfaces;
-using PsicoFlow.Infrastructure.Data;
-using PsicoFlow.Infrastructure.Repositories;
+using PhysioFlow.Api.Services;
+using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Infrastructure.Data;
+using PhysioFlow.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,14 +14,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Configure PostgreSQL with EF Core
-builder.Services.AddDbContext<PsicoFlowDbContext>(options =>
+builder.Services.AddDbContext<PhysioFlowDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
-builder.Services.AddScoped<IConsultationRepository, ConsultationRepository>();
-builder.Services.AddScoped<IClinicalRecordRepository, ClinicalRecordRepository>();
+builder.Services.AddScoped<IGuardianRepository, GuardianRepository>();
+builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
+builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+builder.Services.AddScoped<IEvolutionRepository, EvolutionRepository>();
+builder.Services.AddScoped<IProtocolRepository, ProtocolRepository>();
+
+
+
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -55,20 +61,22 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "PsicoFlow API",
+        Title = "PhysioFlow API",
         Version = "v1",
-        Description = "API para gestão de atendimentos psicológicos"
+        Description = "API para gestão de atendimentos de fisioterapia"
     });
 
     // Add JWT authentication to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token.",
+        Description = "Insira o token JWT",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
+
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -105,7 +113,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "PsicoFlow API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "PhysioFlow API v1");
     });
 }
 
@@ -123,7 +131,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<PsicoFlowDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<PhysioFlowDbContext>();
     db.Database.Migrate();
 }
 

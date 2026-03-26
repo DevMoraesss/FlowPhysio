@@ -1,8 +1,6 @@
-using PsicoFlow.Domain.Entities;
+namespace PhysioFlow.Domain.Interfaces;
 
-namespace PsicoFlow.Domain.Interfaces;
-
-public interface IRepository<T> where T : BaseEntity
+public interface IRepository<T> where T : class
 {
     Task<T?> GetByIdAsync(Guid id);
     Task<IEnumerable<T>> GetAllAsync();

@@ -1,9 +1,9 @@
-using PsicoFlow.Domain.Entities;
+using PhysioFlow.Domain.Entities;
 
-namespace PsicoFlow.Domain.Interfaces;
+namespace PhysioFlow.Domain.Interfaces;
 
 public interface IPatientRepository : IRepository<Patient>
 {
-    Task<IEnumerable<Patient>> GetByPsicologoIdAsync(Guid psicologoId);
-    Task<IEnumerable<Patient>> SearchByNameAsync(string name, Guid psicologoId);
+    Task<IEnumerable<Patient>> GetAllByPhysioAsync(Guid physioId);
+    Task<Patient?> GetByIdWithDetailsAsync(Guid id);
 }
