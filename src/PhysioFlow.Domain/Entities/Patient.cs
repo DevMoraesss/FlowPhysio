@@ -1,3 +1,5 @@
+using PhysioFlow.Domain.Enums;
+
 namespace PhysioFlow.Domain.Entities;
 
 public class Patient : BaseEntity
@@ -18,6 +20,10 @@ public class Patient : BaseEntity
     public string? City { get; set; }
     public string? State { get; set; }
     public bool IsActive { get; set; } = true;
+    public PaymentCycle PaymentCycle { get; set; } = PaymentCycle.PerSession;
+    public string? PaymentDay { get; set; }
+    public decimal? DefaultSessionValue { get; set; }
+
 
     // Navigation properties
     public User Physio { get; set; } = null!;

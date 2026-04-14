@@ -13,3 +13,11 @@ public class DashboardResponse
     public decimal TotalRevenue { get; set; }
     public IEnumerable<AppointmentResponse> Appointments { get; set; } = new List<AppointmentResponse>();
 }
+
+public class NoShowPatientResponse
+{
+    public Guid PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public DateTime LastNoShowDate { get; set; }
+}
+

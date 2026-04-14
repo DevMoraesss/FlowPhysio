@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
@@ -26,6 +27,9 @@ public class ProtocolsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<ProtocolResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ProtocolResponse>>> GetByPatient(Guid patientId)
     {
+        if (!await IsOwnedByCurrentUser(patientId))
+            return NotFound();
+
         var protocols = await _protocolRepository.GetAllByPatientAsync(patientId);
         return Ok(protocols.Select(MapToResponse));
     }
@@ -34,6 +38,9 @@ public class ProtocolsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<ProtocolResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ProtocolResponse>>> GetActiveByPatient(Guid patientId)
     {
+        if (!await IsOwnedByCurrentUser(patientId))
+            return NotFound();
+
         var protocols = await _protocolRepository.GetActiveByPatientAsync(patientId);
         return Ok(protocols.Select(MapToResponse));
     }
@@ -47,6 +54,9 @@ public class ProtocolsController : ControllerBase
         if (protocol == null)
             return NotFound();
 
+        if (!await IsOwnedByCurrentUser(protocol.PatientId))
+            return NotFound();
+
         return Ok(MapToResponse(protocol));
     }
 
@@ -55,8 +65,7 @@ public class ProtocolsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProtocolResponse>> Create([FromBody] CreateProtocolRequest request)
     {
-        var patient = await _patientRepository.GetByIdAsync(request.PatientId);
-        if (patient == null)
+        if (!await IsOwnedByCurrentUser(request.PatientId))
             return NotFound(new { message = "Paciente não encontrado" });
 
         var protocol = new Protocol
@@ -84,6 +93,9 @@ public class ProtocolsController : ControllerBase
         if (protocol == null)
             return NotFound();
 
+        if (!await IsOwnedByCurrentUser(protocol.PatientId))
+            return NotFound();
+
         if (!protocol.IsActive)
             return BadRequest(new { message = "Protocolo encerrado" });
 
@@ -95,9 +107,7 @@ public class ProtocolsController : ControllerBase
         if (protocol.CompletedSessions >= protocol.SessionsPerCycle)
         {
             if (protocol.CurrentCycle >= protocol.TotalCycles)
-            {
                 protocol.IsActive = false;
-            }
             else
             {
                 protocol.CurrentCycle++;
@@ -118,6 +128,9 @@ public class ProtocolsController : ControllerBase
         if (protocol == null)
             return NotFound();
 
+        if (!await IsOwnedByCurrentUser(protocol.PatientId))
+            return NotFound();
+
         if (request.TreatmentName != null) protocol.TreatmentName = request.TreatmentName;
         if (request.IsActive.HasValue) protocol.IsActive = request.IsActive.Value;
 
@@ -125,19 +138,28 @@ public class ProtocolsController : ControllerBase
         return Ok(MapToResponse(protocol));
     }
 
-    private static ProtocolResponse MapToResponse(Protocol protocol)
+    private Guid GetCurrentUserId()
     {
-        return new ProtocolResponse
-        {
-            Id = protocol.Id,
-            PatientId = protocol.PatientId,
-            TreatmentName = protocol.TreatmentName,
-            CurrentCycle = protocol.CurrentCycle,
-            TotalCycles = protocol.TotalCycles,
-            SessionsPerCycle = protocol.SessionsPerCycle,
-            CompletedSessions = protocol.CompletedSessions,
-            IsActive = protocol.IsActive,
-            CreatedAt = protocol.CreatedAt
-        };
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return Guid.Parse(claim!.Value);
     }
+
+    private async Task<bool> IsOwnedByCurrentUser(Guid patientId)
+    {
+        var patient = await _patientRepository.GetByIdAsync(patientId);
+        return patient != null && patient.PhysioId == GetCurrentUserId();
+    }
+
+    private static ProtocolResponse MapToResponse(Protocol protocol) => new()
+    {
+        Id = protocol.Id,
+        PatientId = protocol.PatientId,
+        TreatmentName = protocol.TreatmentName,
+        CurrentCycle = protocol.CurrentCycle,
+        TotalCycles = protocol.TotalCycles,
+        SessionsPerCycle = protocol.SessionsPerCycle,
+        CompletedSessions = protocol.CompletedSessions,
+        IsActive = protocol.IsActive,
+        CreatedAt = protocol.CreatedAt
+    };
 }

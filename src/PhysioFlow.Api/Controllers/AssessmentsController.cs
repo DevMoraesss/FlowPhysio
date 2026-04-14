@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
@@ -24,8 +25,12 @@ public class AssessmentsController : ControllerBase
 
     [HttpGet("patient/{patientId:guid}")]
     [ProducesResponseType(typeof(IEnumerable<AssessmentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<AssessmentResponse>>> GetByPatient(Guid patientId)
     {
+        if (!await IsOwnedByCurrentUser(patientId))
+            return NotFound();
+
         var assessments = await _assessmentRepository.GetAllByPatientAsync(patientId);
         return Ok(assessments.Select(MapToResponse));
     }
@@ -39,6 +44,9 @@ public class AssessmentsController : ControllerBase
         if (assessment == null)
             return NotFound();
 
+        if (!await IsOwnedByCurrentUser(assessment.PatientId))
+            return NotFound();
+
         return Ok(MapToResponse(assessment));
     }
 
@@ -47,8 +55,7 @@ public class AssessmentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AssessmentResponse>> Create([FromBody] CreateAssessmentRequest request)
     {
-        var patient = await _patientRepository.GetByIdAsync(request.PatientId);
-        if (patient == null)
+        if (!await IsOwnedByCurrentUser(request.PatientId))
             return NotFound(new { message = "Paciente não encontrado" });
 
         var assessment = new Assessment
@@ -73,6 +80,9 @@ public class AssessmentsController : ControllerBase
         if (assessment == null)
             return NotFound();
 
+        if (!await IsOwnedByCurrentUser(assessment.PatientId))
+            return NotFound();
+
         if (request.AnamnesisAnswers != null) assessment.AnamnesisAnswers = request.AnamnesisAnswers;
         if (request.GeneralNotes != null) assessment.GeneralNotes = request.GeneralNotes;
 
@@ -80,17 +90,26 @@ public class AssessmentsController : ControllerBase
         return Ok(MapToResponse(assessment));
     }
 
-    private static AssessmentResponse MapToResponse(Assessment assessment)
+    private Guid GetCurrentUserId()
     {
-        return new AssessmentResponse
-        {
-            Id = assessment.Id,
-            PatientId = assessment.PatientId,
-            Type = assessment.Type,
-            AssessmentDate = assessment.AssessmentDate,
-            AnamnesisAnswers = assessment.AnamnesisAnswers,
-            GeneralNotes = assessment.GeneralNotes,
-            CreatedAt = assessment.CreatedAt
-        };
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return Guid.Parse(claim!.Value);
     }
+
+    private async Task<bool> IsOwnedByCurrentUser(Guid patientId)
+    {
+        var patient = await _patientRepository.GetByIdAsync(patientId);
+        return patient != null && patient.PhysioId == GetCurrentUserId();
+    }
+
+    private static AssessmentResponse MapToResponse(Assessment assessment) => new()
+    {
+        Id = assessment.Id,
+        PatientId = assessment.PatientId,
+        Type = assessment.Type,
+        AssessmentDate = assessment.AssessmentDate,
+        AnamnesisAnswers = assessment.AnamnesisAnswers,
+        GeneralNotes = assessment.GeneralNotes,
+        CreatedAt = assessment.CreatedAt
+    };
 }

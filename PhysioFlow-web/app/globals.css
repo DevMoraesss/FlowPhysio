@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-primary: #10b981;
+  --color-brand-secondary: #059669;
+  --color-brand-soft: #ecfdf5;
+  --color-brand-muted: #a7f3d0;
+
+  --color-sage-50: #fbfcfb;
+  --color-sage-100: #f2f5f3;
+  --color-sage-200: #e2e8e4;
+  --color-sage-400: #94a398;
+  --color-sage-500: #718377;
+  --color-sage-700: #3d4a41;
+
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2.5rem;
+}
+
+:root {
+  --background: #fdfdfb;
+  --foreground: #212924;
+  --card: #ffffff;
+  --card-foreground: #212924;
+  --border: #e8ece9;
+  --input: #f2f5f3;
+  --ring: #10b981;
+}
+
+.dark {
+  --background: #0d110f;
+  --foreground: #e1e8e4;
+  --card: #151a17;
+  --card-foreground: #e1e8e4;
+  --border: #222a25;
+  --input: #1a221e;
+  --ring: #10b981;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 dark:bg-black/40 dark:border-white/5;
+}
+
+.wellness-shadow {
+  box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.08);
+}
+
+.wellness-input {
+  width: 100%;
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  padding: 0.875rem 1rem 0.875rem 3.25rem;
+  font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.wellness-input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.06);
+  @apply bg-white dark:bg-zinc-950;
+}

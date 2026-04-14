@@ -289,6 +289,9 @@ namespace PhysioFlow.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("DefaultSessionValue")
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -309,6 +312,13 @@ namespace PhysioFlow.Infrastructure.Migrations
 
                     b.Property<string>("Number")
                         .HasColumnType("text");
+
+                    b.Property<int>("PaymentCycle")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentDay")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)

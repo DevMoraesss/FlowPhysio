@@ -1,400 +1,288 @@
-# 🧠 PhysioFlow API
+# PhysioFlow API
 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjUxMTBhYjI2LTI0YzUtNGNkOC1hNzM0LTBhODY3MWM0MDE5ZSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InByaXNjaWxhQHBoeXNpb2Zsb3cuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6IkRyYS4gUHJpc2NpbGEgU2lsdmEiLCJleHAiOjE3NzQ1NzA3NjYsImlzcyI6IlBoeXNpb0Zsb3ciLCJhdWQiOiJQaHlzaW9GbG93VXNlcnMifQ.MZLNLok_gDVfc5OtfWJZkvokNCYspVTBxfWORGtLXq4
-
-
-Sistema de gestão de atendimentos psicológicos — **ASP.NET Core 8** + **PostgreSQL**
+Sistema de gestão de atendimentos de fisioterapia — **ASP.NET Core 8** + **PostgreSQL** + **Next.js 14**
 
 ---
 
-## � Índice
+## Índice
 
-1. [Requisitos](#-requisitos)
-2. [Instalação e Início](#-instalação-e-início)
-3. [Autenticação](#-autenticação)
-4. [Endpoints da API](#-endpoints-da-api)
-   - [Auth](#auth)
-   - [Usuários](#usuários)
-   - [Pacientes](#pacientes)
-   - [Consultas](#consultas)
-   - [Prontuários](#prontuários)
-5. [Exemplos com cURL](#-exemplos-completos-com-curl)
-6. [Swagger](#-swagger)
-7. [Ambientes](#-ambientes)
+1. [Requisitos](#requisitos)
+2. [Instalação e Início](#instalação-e-início)
+3. [Autenticação](#autenticação)
+4. [Endpoints da API](#endpoints-da-api)
+5. [Exemplos com cURL](#exemplos-com-curl)
+6. [Swagger](#swagger)
 
 ---
 
-## 🔧 Requisitos
+## Requisitos
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Docker](https://docs.docker.com/get-docker/) e Docker Compose
-- Editor: VS Code ou Rider
+- [Node.js 18+](https://nodejs.org/) para o frontend
 
 ---
 
-## 🚀 Instalação e Início
+## Instalação e Início
 
 ### 1. Clone o projeto
 ```bash
 git clone <seu-repo>
 cd PhysioFlow
-```
+2. Inicie o banco de dados
 
-### 2. Inicie o banco de dados
-```bash
 docker-compose -f docker-compose.local.yaml up -d
-```
-Isso inicia o PostgreSQL na porta `5432`.
+3. Aplique as migrations
 
-### 3. Execute a API
-```bash
+dotnet ef database update --project src/PhysioFlow.Infrastructure --startup-project src/PhysioFlow.Api
+4. Execute a API
+
 dotnet run --project src/PhysioFlow.Api
-```
+5. Execute o Frontend
 
-### 4. Acesse
-- **API**: http://localhost:5000
-- **Swagger**: http://localhost:5000/swagger
-- **Health Check**: http://localhost:5000/health
+cd PhysioFlow-web
+npm install
+npm run dev
+Acesse
+Frontend: http://localhost:3000
+API: http://localhost:5000
+Swagger: http://localhost:5000/swagger
+Autenticação
+A API usa JWT. Todas as rotas (exceto login/register) exigem o token no header:
 
-### ✅ Verificar se está funcionando
-```bash
-curl http://localhost:5000/health
-# Resposta: {"status":"healthy","timestamp":"..."}
-```
 
----
+Authorization: Bearer SEU_TOKEN
+Endpoints da API
+Auth
+Método	Endpoint	Descrição	Auth
+POST	/api/auth/register	Criar conta de fisioterapeuta	❌
+POST	/api/auth/login	Login — retorna JWT	❌
+Usuários
+Método	Endpoint	Descrição	Auth
+GET	/api/users/me	Dados do usuário logado	✅
+PUT	/api/users/me	Atualizar perfil (nome, telefone, cpf, crefito)	✅
+Pacientes
+Método	Endpoint	Descrição	Auth
+GET	/api/patients	Listar pacientes ativos do fisio	✅
+GET	/api/patients/{id}	Buscar por ID	✅
+POST	/api/patients	Criar paciente	✅
+PUT	/api/patients/{id}	Atualizar paciente	✅
+PATCH	/api/patients/{id}/deactivate	Inativar paciente (soft delete)	✅
+PaymentCycle: 1 = Por Sessão · 2 = Quinzenal · 3 = Mensal
 
-## 🔐 Autenticação
+Responsáveis (Guardians)
+Método	Endpoint	Descrição	Auth
+GET	/api/guardians/{id}	Buscar responsável por ID	✅
+POST	/api/guardians	Criar responsável	✅
+Agendamentos
+Método	Endpoint	Descrição	Auth
+GET	/api/appointments/range?start=&end=	Agendamentos por período	✅
+GET	/api/appointments/patient/{patientId}	Agendamentos de um paciente	✅
+GET	/api/appointments/pending-payments	Sessões concluídas com pgto pendente	✅
+GET	/api/appointments/{id}	Buscar por ID	✅
+POST	/api/appointments	Criar agendamento	✅
+PUT	/api/appointments/{id}	Atualizar status, pagamento, etc.	✅
+PATCH	/api/appointments/batch-pay	Marcar múltiplos agendamentos como pagos	✅
+AppointmentStatus: 1 = Scheduled · 2 = Completed · 3 = NoShow · 4 = Cancelled
 
-A API usa **JWT (JSON Web Token)**. Todas as rotas (exceto login/register) exigem o token.
+PaymentStatus: 1 = Pending · 2 = Paid · 3 = Waived
 
-### Fluxo de Autenticação
+PaymentMethod: 1 = Pix · 2 = Cash · 3 = Card
 
-```
-1. POST /api/auth/register  → Criar conta
-2. POST /api/auth/login     → Receber token JWT
-3. Usar token em todas as requisições → Header: Authorization: Bearer <token>
-```
+Evoluções
+Método	Endpoint	Descrição	Auth
+GET	/api/evolutions/patient/{patientId}	Evoluções de um paciente	✅
+GET	/api/evolutions/appointment/{appointmentId}	Evolução de um agendamento	✅
+GET	/api/evolutions/{id}	Buscar por ID	✅
+POST	/api/evolutions	Registrar evolução (sessão deve estar Completed)	✅
+PUT	/api/evolutions/{id}	Atualizar evolução	✅
+Avaliações (Anamneses)
+Método	Endpoint	Descrição	Auth
+GET	/api/assessments/patient/{patientId}	Avaliações de um paciente	✅
+GET	/api/assessments/{id}	Buscar por ID	✅
+POST	/api/assessments	Registrar avaliação/anamnese	✅
+PUT	/api/assessments/{id}	Atualizar avaliação	✅
+AssessmentType: 1 = Initial · 2 = Quarterly
 
-### Obter o Token
+Protocolos de Tratamento
+Método	Endpoint	Descrição	Auth
+GET	/api/protocols/patient/{patientId}	Todos os protocolos do paciente	✅
+GET	/api/protocols/patient/{patientId}/active	Apenas protocolos ativos	✅
+GET	/api/protocols/{id}	Buscar por ID	✅
+POST	/api/protocols	Criar protocolo	✅
+PUT	/api/protocols/{id}	Atualizar protocolo	✅
+PATCH	/api/protocols/{id}/complete-session	Registrar sessão concluída manualmente	✅
+Dashboard
+Método	Endpoint	Descrição	Auth
+GET	/api/dashboard/today	Agendamentos do dia atual	✅
+GET	/api/dashboard/no-shows	Pacientes que faltaram sem reagendar	✅
+Anexos
+Método	Endpoint	Descrição	Auth
+GET	/api/attachments/patient/{patientId}	Listar anexos do paciente	✅
+GET	/api/attachments/{id}/download	Download do arquivo	✅
+POST	/api/attachments	Upload (multipart/form-data)	✅
+DELETE	/api/attachments/{id}	Deletar anexo	✅
+Exemplos com cURL
+1. Registrar fisioterapeuta
 
-```bash
-# Login
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "psicologo@exemplo.com",
-    "password": "senha123"
-  }'
-```
-
-**Resposta:**
-```json
-{
-  "user": {
-    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "name": "Dr. João Silva",
-    "email": "psicologo@exemplo.com",
-    "role": 1
-  },
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-### Usar o Token
-Adicione em todas as requisições:
-```bash
--H "Authorization: Bearer SEU_TOKEN_AQUI"
-```
-
----
-
-## 📡 Endpoints da API
-
-### Auth
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| POST | `/api/auth/register` | Criar nova conta | ❌ |
-| POST | `/api/auth/login` | Login (retorna JWT) | ❌ |
-| POST | `/api/auth/forgot-password` | Solicitar reset de senha | ❌ |
-| POST | `/api/auth/reset-password` | Resetar senha com token | ❌ |
-
----
-
-### Usuários
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| GET | `/api/users/me` | Dados do usuário logado | ✅ |
-| GET | `/api/users` | Listar todos (Admin) | ✅ Admin |
-| GET | `/api/users/{id}` | Buscar por ID | ✅ |
-| PUT | `/api/users/{id}` | Atualizar usuário | ✅ |
-| DELETE | `/api/users/{id}` | Deletar (Admin) | ✅ Admin |
-
-**Roles disponíveis:**
-- `0` = Admin
-- `1` = Psicologo
-- `2` = Secretario
-- `3` = Paciente
-- `4` = Responsavel
-
----
-
-### Pacientes
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| GET | `/api/patients` | Listar pacientes do psicólogo | ✅ |
-| GET | `/api/patients?search=nome` | Buscar por nome | ✅ |
-| GET | `/api/patients/{id}` | Buscar por ID | ✅ |
-| POST | `/api/patients` | Criar paciente | ✅ |
-| PUT | `/api/patients/{id}` | Atualizar | ✅ |
-| DELETE | `/api/patients/{id}` | Deletar | ✅ |
-
----
-
-### Consultas
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| GET | `/api/consultations` | Listar consultas | ✅ |
-| GET | `/api/consultations?startDate=...&endDate=...` | Filtrar por período | ✅ |
-| GET | `/api/consultations?status=0` | Filtrar por status | ✅ |
-| GET | `/api/consultations/{id}` | Buscar por ID | ✅ |
-| POST | `/api/consultations` | Agendar consulta | ✅ |
-| PUT | `/api/consultations/{id}` | Atualizar | ✅ |
-| PATCH | `/api/consultations/{id}/status` | Mudar status | ✅ |
-| DELETE | `/api/consultations/{id}` | Cancelar | ✅ |
-
-**Status de Consulta:**
-- `0` = Agendada
-- `1` = Realizada
-- `2` = Cancelada
-- `3` = Faltou
-
-**Tipo de Consulta:**
-- `0` = Online
-- `1` = Presencial
-
----
-
-### Prontuários
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| GET | `/api/clinical-records/patient/{patientId}` | Por paciente | ✅ |
-| GET | `/api/clinical-records/consultation/{consultationId}` | Por consulta | ✅ |
-| GET | `/api/clinical-records/{id}` | Buscar por ID | ✅ |
-| POST | `/api/clinical-records` | Criar prontuário | ✅ |
-| PUT | `/api/clinical-records/{id}` | Atualizar | ✅ |
-| DELETE | `/api/clinical-records/{id}` | Deletar | ✅ |
-
----
-
-## � Exemplos Completos com cURL
-
-### 1. Registrar Usuário (Psicólogo)
-
-```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Dr. João Silva",
-    "email": "joao@exemplo.com",
+    "fullName": "Dra. Priscila Silva",
+    "email": "priscila@physioflow.com",
     "password": "senha123",
-    "phone": "11999999999",
-    "role": 1,
-    "address": {
-      "street": "Rua das Flores",
-      "number": 123,
-      "city": "São Paulo",
-      "state": "SP",
-      "zipCode": "01234-567"
-    }
+    "phone": "19999999999",
+    "crefito": "CREFITO-3/12345-F"
   }'
-```
+2. Login e salvar token
 
----
-
-### 2. Login
-
-```bash
 TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"joao@exemplo.com","password":"senha123"}' \
+  -d '{"email":"priscila@physioflow.com","password":"senha123"}' \
   | jq -r '.accessToken')
-
 echo "Token: $TOKEN"
-```
+3. Criar paciente com ciclo mensal
 
----
-
-### 3. Criar Paciente
-
-```bash
 curl -X POST http://localhost:5000/api/patients \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "name": "Maria Santos",
-    "email": "maria@exemplo.com",
-    "phone": "11988888888",
-    "birthDate": "1990-05-15"
+    "fullName": "Maria Santos",
+    "birthDate": "1990-05-15",
+    "phone": "19988887777",
+    "email": "maria@email.com",
+    "cpf": "123.456.789-00",
+    "paymentCycle": 3,
+    "paymentDay": "dia 5",
+    "defaultSessionValue": 150.00
   }'
-```
+4. Criar agendamento
 
----
-
-### 4. Listar Pacientes
-
-```bash
-curl http://localhost:5000/api/patients \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-### 5. Buscar Paciente por Nome
-
-```bash
-curl "http://localhost:5000/api/patients?search=Maria" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-### 6. Atualizar Paciente
-
-```bash
-curl -X PUT http://localhost:5000/api/patients/{PATIENT_ID} \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{
-    "phone": "11977777777",
-    "email": "maria.novo@exemplo.com"
-  }'
-```
-
----
-
-### 7. Deletar Paciente
-
-```bash
-curl -X DELETE http://localhost:5000/api/patients/{PATIENT_ID} \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-### 8. Agendar Consulta
-
-```bash
-curl -X POST http://localhost:5000/api/consultations \
+curl -X POST http://localhost:5000/api/appointments \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
     "patientId": "ID_DO_PACIENTE",
-    "startAt": "2026-02-10T14:00:00",
-    "endAt": "2026-02-10T15:00:00",
-    "type": 1,
-    "location": "Sala 3",
-    "observation": "Primeira sessão"
+    "startDateTime": "2026-04-05T14:00:00",
+    "endDateTime": "2026-04-05T15:00:00",
+    "sessionValue": 150.00,
+    "notes": "Trazer exame de imagem"
   }'
-```
+5. Concluir sessão — pagamento na hora
 
----
-
-### 9. Listar Consultas por Período
-
-```bash
-curl "http://localhost:5000/api/consultations?startDate=2026-02-01&endDate=2026-02-28" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-### 10. Marcar Consulta como Realizada
-
-```bash
-curl -X PATCH http://localhost:5000/api/consultations/{CONSULT_ID}/status \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"status": 1}'
-```
-
----
-
-### 11. Criar Prontuário
-
-```bash
-curl -X POST http://localhost:5000/api/clinical-records \
+curl -X PUT http://localhost:5000/api/appointments/ID_DO_AGENDAMENTO \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "consultationId": "ID_DA_CONSULTA",
-    "summary": "Paciente relatou melhora nos sintomas de ansiedade.",
-    "therapeuticGoals": "Continuar técnicas de respiração. Introduzir mindfulness.",
-    "observations": "Próxima sessão: focar em situações gatilho."
+    "status": 2,
+    "paymentStatus": 2,
+    "paymentMethod": 1
   }'
-```
+6. Concluir sessão — pagar depois (paciente mensal)
 
----
+curl -X PUT http://localhost:5000/api/appointments/ID_DO_AGENDAMENTO \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "status": 2,
+    "paymentStatus": 1
+  }'
+7. Ver pagamentos pendentes agrupados
 
-### 12. Listar Prontuários do Paciente
-
-```bash
-curl http://localhost:5000/api/clinical-records/patient/{PATIENT_ID} \
+curl http://localhost:5000/api/appointments/pending-payments \
   -H "Authorization: Bearer $TOKEN"
-```
+8. Marcar múltiplas sessões como pagas (paciente mensal)
 
----
+curl -X PATCH http://localhost:5000/api/appointments/batch-pay \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "appointmentIds": ["ID1", "ID2", "ID3", "ID4"],
+    "paymentMethod": 1
+  }'
+9. Registrar anamnese
 
-## 📖 Swagger
+curl -X POST http://localhost:5000/api/assessments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "patientId": "ID_DO_PACIENTE",
+    "type": 1,
+    "assessmentDate": "2026-04-01T12:00:00Z",
+    "anamnesisAnswers": "{\"queixaPrincipal\":\"Dor no joelho direito\",\"localDaDor\":\"Joelho direito\",\"atividadeFisica\":\"sedentario\",\"qualidadeDeSono\":\"regular\"}",
+    "generalNotes": "Paciente chegou com dificuldade de locomoção"
+  }'
+10. Registrar evolução (sessão deve estar Completed)
 
-Acesse **http://localhost:5000/swagger** para documentação interativa.
+curl -X POST http://localhost:5000/api/evolutions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "appointmentId": "ID_DO_AGENDAMENTO",
+    "proceduresPerformed": "Alongamento e mobilização articular",
+    "techniquesApplied": "RPG e liberação miofascial",
+    "painScale": 4,
+    "clinicalNotes": "Paciente relatou melhora significativa",
+    "nextSessionPlan": "Aumentar carga dos exercícios"
+  }'
+11. Criar protocolo de tratamento
 
-1. Clique em **"Authorize"** 🔒
-2. Digite: `Bearer SEU_TOKEN`
-3. Teste qualquer endpoint direto pelo navegador
+curl -X POST http://localhost:5000/api/protocols \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "patientId": "ID_DO_PACIENTE",
+    "treatmentName": "Reabilitação Joelho Pós-Cirúrgico",
+    "totalCycles": 3,
+    "sessionsPerCycle": 10
+  }'
+12. Agendamentos da semana atual
 
----
+curl "http://localhost:5000/api/appointments/range?start=2026-04-01T00:00:00Z&end=2026-04-07T23:59:59Z" \
+  -H "Authorization: Bearer $TOKEN"
+13. Dashboard do dia
 
-## 🌍 Ambientes
+curl http://localhost:5000/api/dashboard/today \
+  -H "Authorization: Bearer $TOKEN"
+14. Pacientes que faltaram sem reagendar
 
-| Ambiente | Comando | Descrição |
-|----------|---------|-----------|
-| **Local** | `docker-compose -f docker-compose.local.yaml up -d` + `dotnet run` | Desenvolvimento |
-| **Dev/Staging** | `docker-compose -f docker-compose.dev.yaml up --build` | Testar em container |
-| **Produção** | `docker-compose -f docker-compose.prod.yaml up -d` | Deploy final |
+curl http://localhost:5000/api/dashboard/no-shows \
+  -H "Authorization: Bearer $TOKEN"
+Swagger
+Acesse http://localhost:5000/swagger
 
----
+Clique em Authorize 🔒
+Digite: Bearer SEU_TOKEN
+Teste qualquer endpoint
+Comandos Úteis
 
-## 🛠️ Comandos Úteis
+# Iniciar banco
+docker-compose -f docker-compose.local.yaml up -d
 
-```bash
-# Ver logs do banco
-docker logs PhysioFlow-db-local
-
-# Parar o banco
+# Parar banco
 docker-compose -f docker-compose.local.yaml down
 
-# Rebuild completo
-dotnet clean && dotnet build
-
-# Criar nova migration
+# Nova migration
 dotnet ef migrations add NomeDaMigration \
   --project src/PhysioFlow.Infrastructure \
   --startup-project src/PhysioFlow.Api
 
-# Aplicar migrations manualmente
+# Aplicar migrations
 dotnet ef database update \
   --project src/PhysioFlow.Infrastructure \
   --startup-project src/PhysioFlow.Api
-```
 
----
+# Build
+dotnet build
 
-## 📄 Licença
+# Executar API
+dotnet run --project src/PhysioFlow.Api
 
-Proprietário © 2026
+# Executar Frontend
+cd PhysioFlow-web && npm run dev
+Proprietário © 2026 — PhysioFlow
+
+-------------------
+
+
+priscila@physioflow.com

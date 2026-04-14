@@ -20,7 +20,11 @@ public class PatientResponse
     public bool IsActive { get; set; }
     public Guid PhysioId { get; set; }
     public Guid? GuardianId { get; set; }
+    public int PaymentCycle { get; set; }
+    public string? PaymentDay { get; set; }
     public DateTime CreatedAt { get; set; }
+    public decimal? DefaultSessionValue { get; set; }
+
 }
 
 public class CreatePatientRequest
@@ -43,6 +47,10 @@ public class CreatePatientRequest
     public string? City { get; set; }
     public string? State { get; set; }
     public Guid? GuardianId { get; set; }
+    public int PaymentCycle { get; set; } = 1;
+    public string? PaymentDay { get; set; }
+    public decimal? DefaultSessionValue { get; set; }
+
 }
 
 public class UpdatePatientRequest
@@ -60,4 +68,8 @@ public class UpdatePatientRequest
     public string? City { get; set; }
     public string? State { get; set; }
     public Guid? GuardianId { get; set; }
+    public int? PaymentCycle { get; set; }
+    public string? PaymentDay { get; set; }
+    public decimal? DefaultSessionValue { get; set; }
+
 }

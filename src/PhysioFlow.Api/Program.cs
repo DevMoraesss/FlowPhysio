@@ -25,6 +25,8 @@ builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<IEvolutionRepository, EvolutionRepository>();
 builder.Services.AddScoped<IProtocolRepository, ProtocolRepository>();
+builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+
 
 
 
@@ -95,17 +97,39 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Configure CORS
+var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(",") ?? new [] {"http://localhost:3000"};
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
 
 var app = builder.Build();
+
+// Middleware de exceção global — só em produção (em dev queremos ver o erro completo)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler(appBuilder =>
+    {
+        appBuilder.Run(async context =>
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(
+                System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    message = "Ocorreu um erro interno. Tente novamente mais tarde."
+                })
+            );
+        });
+    });
+}
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

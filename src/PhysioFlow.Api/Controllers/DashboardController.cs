@@ -29,9 +29,7 @@ public class DashboardController : ControllerBase
         var tomorrow = today.AddDays(1);
 
         var appointments = await _appointmentRepository.GetByDateRangeAsync(
-            physioId,
-            today,
-            tomorrow);
+            physioId, today, tomorrow);
 
         var list = appointments.ToList();
 
@@ -50,6 +48,7 @@ public class DashboardController : ControllerBase
             {
                 Id = a.Id,
                 PatientId = a.PatientId,
+                PatientName = a.Patient?.FullName,   // ← linha nova
                 PhysioId = a.PhysioId,
                 ProtocolId = a.ProtocolId,
                 StartDateTime = a.StartDateTime,
@@ -66,6 +65,26 @@ public class DashboardController : ControllerBase
 
         return Ok(response);
     }
+
+
+    [HttpGet("no-shows")]
+    [ProducesResponseType(typeof(IEnumerable<NoShowPatientResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<NoShowPatientResponse>>> GetNoShows()
+    {
+        var physioId = GetCurrentUserId();
+        var noShows = await _appointmentRepository.GetNoShowsWithoutReschedulingAsync(physioId);
+
+        var response = noShows.Select(a => new NoShowPatientResponse
+        {
+            PatientId = a.PatientId,
+            PatientName = a.Patient?.FullName ?? "—",
+            LastNoShowDate = a.StartDateTime
+        });
+
+        return Ok(response);
+    }
+
+
         private Guid GetCurrentUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier);
