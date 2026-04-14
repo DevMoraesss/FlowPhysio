@@ -87,4 +87,4 @@ yarn-error.log
 
 
 # appsettings
-appsettings.Production.json/
+src/PhysioFlow.Api/appsettings.Production.jsons
