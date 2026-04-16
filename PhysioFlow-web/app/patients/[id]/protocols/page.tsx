@@ -6,12 +6,26 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { Dialog } from "@/components/Dialog";
+
+    type DialogState = {
+        title: string;
+        message: string;
+        confirmLabel?: string;
+        variant?: "danger" | "warning" | "default";
+        onConfirm: () => void;
+        onCancel?: () => void;
+    } | null;
 
 export default function ProtocolsPage() {
     const { id } = useParams(); // id do paciente
     const [protocols, setProtocols] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [completing, setCompleting] = useState<string | null>(null); // id do protocolo sendo atualizado
+
+    // e junto com os outros useState:
+    const [dialog, setDialog] = useState<DialogState>(null);
+
 
     useEffect(() => {
         loadProtocols();
@@ -41,27 +55,47 @@ export default function ProtocolsPage() {
                 prev.map(p => p.id === protocolId ? updated : p)
             );
         } catch (err: any) {
-            alert(err.message || "Erro ao completar sessão");
+            setDialog({
+                title: "Erro",
+                message: err.message || "Erro ao completar sessão",
+                confirmLabel: "OK",
+                onConfirm: () => setDialog(null),
+            });
         } finally {
             setCompleting(null);
         }
     }
 
     // Encerra o protocolo manualmente
-    async function deactivateProtocol(protocolId: string) {
-        if (!confirm("Deseja encerrar este protocolo?")) return;
-        try {
-            const updated = await apiFetch(`/protocols/${protocolId}`, {
-                method: "PUT",
-                body: JSON.stringify({ isActive: false }),
-            });
-            setProtocols(prev =>
-                prev.map(p => p.id === protocolId ? updated : p)
-            );
-        } catch (err: any) {
-            alert(err.message || "Erro ao encerrar protocolo");
-        }
+    function deactivateProtocol(protocolId: string) {
+        setDialog({
+            title: "Encerrar protocolo",
+            message: "O protocolo será encerrado. O progresso atual será mantido no histórico.",
+            confirmLabel: "Encerrar",
+            variant: "warning",
+            onConfirm: async () => {
+                setDialog(null);
+                try {
+                    const updated = await apiFetch(`/protocols/${protocolId}`, {
+                        method: "PUT",
+                        body: JSON.stringify({ isActive: false }),
+                    });
+                    setProtocols(prev =>
+                        prev.map(p => p.id === protocolId ? updated : p)
+                    );
+                } catch (err: any) {
+                    setDialog({
+                        title: "Erro",
+                        message: err.message || "Erro ao encerrar protocolo",
+                        confirmLabel: "OK",
+                        onConfirm: () => setDialog(null),
+                    });
+                }
+            },
+            onCancel: () => setDialog(null),
+        });
     }
+
 
     // Calcula o progresso total do protocolo em %
     // Ex: ciclo 2 de 3, 4 sessões de 10 = (10 + 4) / 30 = 46%
@@ -245,6 +279,17 @@ export default function ProtocolsPage() {
                     </div>
                 )}
             </main>
+            {dialog && (
+                <Dialog
+                    isOpen={true}
+                    title={dialog.title}
+                    message={dialog.message}
+                    confirmLabel={dialog.confirmLabel}
+                    variant={dialog.variant}
+                    onConfirm={dialog.onConfirm}
+                    onCancel={dialog.onCancel}
+                />
+            )}
         </div>
     );
 }

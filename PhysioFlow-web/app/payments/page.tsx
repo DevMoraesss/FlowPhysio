@@ -5,6 +5,8 @@ import { DollarSign, CheckCircle, Loader2, User, History, Clock } from "lucide-r
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { Dialog } from "@/components/Dialog";
+
 
 const cycleLabel: Record<number, string> = { 1: "Por Sessão", 2: "Quinzenal", 3: "Mensal", 4: "Semanal" };
 const methodLabel: Record<number, string> = { 1: "Pix", 2: "Dinheiro", 3: "Cartão" };
@@ -14,6 +16,14 @@ const methodColor: Record<number, string> = {
     3: "bg-blue-100 text-blue-700",
 };
 
+// ADICIONAR junto com os outros estados:
+type DialogState = {
+    title: string; message: string; confirmLabel?: string;
+    variant?: "danger" | "warning" | "default";
+    onConfirm: () => void; onCancel?: () => void;
+} | null;
+
+
 export default function PaymentsPage() {
     const [activeTab, setActiveTab] = useState<"pendentes" | "historico">("pendentes");
 
@@ -22,6 +32,7 @@ export default function PaymentsPage() {
     const [loadingPending, setLoadingPending] = useState(true);
     const [paying, setPaying] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<Record<string, string>>({});
+    const [dialog, setDialog] = useState<DialogState>(null);
 
     // Histórico
     const [history, setHistory] = useState<any[]>([]);
@@ -70,7 +81,13 @@ export default function PaymentsPage() {
             });
             await loadPending();
         } catch (err: any) {
-            alert(err.message || "Erro ao registrar pagamento");
+            setDialog({
+                title: "Erro no pagamento",
+                message: err.message || "Não foi possível registrar o pagamento.",
+                confirmLabel: "OK",
+                onConfirm: () => setDialog(null),
+            });
+
         } finally {
             setPaying(null);
         }
@@ -299,6 +316,18 @@ export default function PaymentsPage() {
                     </>
                 )}
             </main>
+            {dialog && (
+                <Dialog
+                    isOpen={true}
+                    title={dialog.title}
+                    message={dialog.message}
+                    confirmLabel={dialog.confirmLabel}
+                    variant={dialog.variant}
+                    onConfirm={dialog.onConfirm}
+                    onCancel={dialog.onCancel}
+                />
+            )}
+
         </div>
     );
 }

@@ -11,6 +11,17 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { Dialog } from "@/components/Dialog";
+
+type DialogState = {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: "danger" | "warning" | "default";
+    onConfirm: () => void;
+    onCancel?: () => void;
+} | null;
+
 
 const cycleLabel: Record<number, string> = { 1: "Por Sessão", 2: "Quinzenal", 3: "Mensal", 4: "Semanal" };
 
@@ -27,19 +38,35 @@ export default function PatientDetailsPage() {
     const [error, setError] = useState("");
     const [inactivating, setInactivating] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [dialog, setDialog] = useState<DialogState>(null);
     const router = useRouter();
 
-    const handleInactivate = async () => {
-        if (!confirm(`Deseja inativar ${patient?.fullName}?`)) return;
-        setInactivating(true);
-        try {
-            await apiFetch(`/patients/${id}/deactivate`, { method: "PATCH" });
-            router.push("/patients");
-        } catch (err: any) {
-            alert(err.message || "Erro ao inativar paciente");
-            setInactivating(false);
-        }
+    const handleInactivate = () => {
+        setDialog({
+            title: "Inativar paciente",
+            message: `Deseja inativar ${patient?.fullName}? O cadastro é mantido e pode ser reativado depois.`,
+            confirmLabel: "Inativar",
+            variant: "warning",
+            onConfirm: async () => {
+                setDialog(null);
+                setInactivating(true);
+                try {
+                    await apiFetch(`/patients/${id}/deactivate`, { method: "PATCH" });
+                    router.push("/patients");
+                } catch (err: any) {
+                    setDialog({
+                        title: "Erro",
+                        message: err.message || "Erro ao inativar paciente",
+                        confirmLabel: "OK",
+                        onConfirm: () => setDialog(null),
+                    });
+                    setInactivating(false);
+                }
+            },
+            onCancel: () => setDialog(null),
+        });
     };
+
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -60,7 +87,12 @@ export default function PatientDetailsPage() {
             const newAttachment = await response.json();
             setAttachments(prev => [newAttachment, ...prev]);
         } catch (err: any) {
-            alert(err.message || 'Erro ao fazer upload');
+            setDialog({
+                title: "Erro no upload",
+                message: err.message || "Erro ao fazer upload",
+                confirmLabel: "OK",
+                onConfirm: () => setDialog(null),
+            });
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -83,19 +115,39 @@ export default function PatientDetailsPage() {
             a.click();
             URL.revokeObjectURL(url);
         } catch (err: any) {
-            alert(err.message || 'Erro ao baixar arquivo');
+                setDialog({
+                title: "Erro no download",
+                message: err.message || "Erro ao baixar arquivo",
+                confirmLabel: "OK",
+                onConfirm: () => setDialog(null),
+            });
         }
     };
 
-    const handleDeleteAttachment = async (attachmentId: string) => {
-        if (!confirm('Excluir este anexo?')) return;
-        try {
-            await apiFetch(`/attachments/${attachmentId}`, { method: 'DELETE' });
-            setAttachments(prev => prev.filter((a: any) => a.id !== attachmentId));
-        } catch (err: any) {
-            alert(err.message || 'Erro ao excluir anexo');
-        }
+    const handleDeleteAttachment = (attachmentId: string) => {
+        setDialog({
+            title: "Excluir anexo",
+            message: "Tem certeza? O arquivo será removido permanentemente.",
+            confirmLabel: "Excluir",
+            variant: "danger",
+            onConfirm: async () => {
+                setDialog(null);
+                try {
+                    await apiFetch(`/attachments/${attachmentId}`, { method: 'DELETE' });
+                    setAttachments(prev => prev.filter((a: any) => a.id !== attachmentId));
+                } catch (err: any) {
+                    setDialog({
+                        title: "Erro",
+                        message: err.message || "Erro ao excluir anexo",
+                        confirmLabel: "OK",
+                        onConfirm: () => setDialog(null),
+                    });
+                }
+            },
+            onCancel: () => setDialog(null),
+        });
     };
+
 
     useEffect(() => {
         async function loadData() {
@@ -547,6 +599,17 @@ export default function PatientDetailsPage() {
                     </div>
                 </div>
             </main>
+            {dialog && (
+                <Dialog
+                    isOpen={true}
+                    title={dialog.title}
+                    message={dialog.message}
+                    confirmLabel={dialog.confirmLabel}
+                    variant={dialog.variant}
+                    onConfirm={dialog.onConfirm}
+                    onCancel={dialog.onCancel}
+                />
+            )}
         </div>
     );
 }

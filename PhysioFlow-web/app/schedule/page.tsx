@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/Sidebar";
 import { Plus, X, Calendar as CalendarIcon, Clock, User, DollarSign, CheckCircle, Loader2 } from "lucide-react";
+import { Dialog } from "@/components/Dialog";
 import Link from "next/link";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +14,14 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 
+// ADICIONAR junto com os outros estados:
+type DialogState = {
+    title: string; message: string; confirmLabel?: string;
+    variant?: "danger" | "warning" | "default";
+    onConfirm: () => void; onCancel?: () => void;
+} | null;
+
+
 export default function SchedulePage() {
     const router = useRouter();
     const calendarRef = useRef<FullCalendar>(null);
@@ -22,6 +31,7 @@ export default function SchedulePage() {
     const [updating, setUpdating] = useState(false);
     const [showCompleteForm, setShowCompleteForm] = useState(false);
     const [closePaymentMethod, setClosePaymentMethod] = useState("1");
+    const [dialog, setDialog] = useState<DialogState>(null);
 
 
 
@@ -62,7 +72,13 @@ const handleUpdateStatus = async (status: number) => {
         closeModal();
         calendarRef.current?.getApi().refetchEvents();
     } catch (err: any) {
-        alert(err.message || "Erro ao atualizar sessão");
+        setDialog({
+            title: "Erro ao atualizar sessão",
+            message: err.message || "Não foi possível atualizar o status.",
+            confirmLabel: "OK",
+            onConfirm: () => setDialog(null),
+        });
+
     } finally {
         setUpdating(false);
     }
@@ -297,6 +313,17 @@ const handleUpdateStatus = async (status: number) => {
 
                     </div>
                 </div>
+            )}
+            {dialog && (
+                <Dialog
+                    isOpen={true}
+                    title={dialog.title}
+                    message={dialog.message}
+                    confirmLabel={dialog.confirmLabel}
+                    variant={dialog.variant}
+                    onConfirm={dialog.onConfirm}
+                    onCancel={dialog.onCancel}
+                />
             )}
 
             <style jsx global>{`
