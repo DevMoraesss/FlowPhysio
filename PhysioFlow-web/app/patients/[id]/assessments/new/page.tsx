@@ -1,9 +1,9 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowLeft, ClipboardList, Save, Loader2, Baby, User } from "lucide-react";
+import { ArrowLeft, ClipboardList, Save, Loader2, Baby, User, Lock } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
@@ -13,6 +13,21 @@ export default function NewAssessmentPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [isAdult, setIsAdult] = useState(true);
+
+    const [lastAssessment, setLastAssessment] = useState<any>(null);
+    const [loadingCheck, setLoadingCheck] = useState(true);
+
+    useEffect(() => {
+        apiFetch(`/assessments/patient/${id}`)
+            .then((data: any[]) => {
+                const sorted = data.sort(
+                    (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
+                );
+                setLastAssessment(sorted[0] ?? null);
+            })
+            .catch(() => {})
+            .finally(() => setLoadingCheck(false));
+    }, [id]);
 
     const [assessmentType, setAssessmentType] = useState("1");
     const [assessmentDate, setAssessmentDate] = useState(
@@ -80,6 +95,22 @@ export default function NewAssessmentPage() {
         setPedAnswers((prev) => ({ ...prev, [name]: value }));
     };
 
+    const daysSinceLast = lastAssessment
+        ? Math.floor((Date.now() - new Date(lastAssessment.assessmentDate).getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+    const daysLeft = daysSinceLast !== null ? Math.max(0, 90 - daysSinceLast) : 0;
+
+    const blockReason: string | null = (() => {
+        if (loadingCheck) return null;
+        if (assessmentType === "1" && lastAssessment)
+            return "Este paciente já possui uma avaliação inicial. Selecione 'Reavaliação Trimestral'.";
+        if (assessmentType === "2" && !lastAssessment)
+            return "Realize a Avaliação Inicial antes de registrar uma reavaliação.";
+        if (assessmentType === "2" && daysSinceLast !== null && daysSinceLast < 90)
+            return `Reavaliação disponível em ${daysLeft} dia(s). Última avaliação foi há ${daysSinceLast} dia(s).`;
+        return null;
+    })();
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -119,6 +150,16 @@ export default function NewAssessmentPage() {
                         <p className="text-sage-500 dark:text-zinc-500 mt-1">Registre a avaliação clínica do paciente.</p>
                     </div>
                 </header>
+
+                {blockReason && (
+                    <div className="mx-auto max-w-4xl mb-6 flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 dark:bg-amber-950/20 dark:border-amber-900/40">
+                        <Lock size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Avaliação bloqueada</p>
+                            <p className="text-sm text-amber-600 dark:text-amber-500 mt-0.5">{blockReason}</p>
+                        </div>
+                    </div>
+                )}
 
                 {error && (
                     <div className="mx-auto max-w-4xl mb-6 rounded-xl bg-red-500/10 p-4 text-sm font-medium text-red-500 border border-red-500/20">
@@ -186,8 +227,8 @@ export default function NewAssessmentPage() {
                         <Link href={`/patients/${id}`} className="px-8 py-4 text-sm font-bold text-sage-500 hover:text-sage-700 transition-colors">
                             Cancelar
                         </Link>
-                        <button type="submit" disabled={saving}
-                            className="flex items-center gap-2 rounded-2xl bg-brand-primary px-10 py-4 font-bold text-white shadow-xl shadow-brand-primary/20 transition-all hover:bg-brand-secondary hover:translate-y-[-2px] disabled:opacity-50">
+                        <button type="submit" disabled={saving || !!blockReason}
+                            className="flex items-center gap-2 rounded-2xl bg-brand-primary px-10 py-4 font-bold text-white shadow-xl shadow-brand-primary/20 transition-all hover:bg-brand-secondary hover:translate-y-[-2px] disabled:opacity-50 disabled:cursor-not-allowed">
                             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                             Salvar Avaliação
                         </button>

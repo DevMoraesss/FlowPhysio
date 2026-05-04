@@ -248,6 +248,29 @@ export default function PatientDetailsPage() {
                     </div>
                 </header>
 
+                {/* Banner de reavaliação pendente */}
+                {needsReassessment && (
+                    <Link
+                        href={`/patients/${id}/assessments/new`}
+                        className="mb-6 flex items-center gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 hover:bg-amber-100 transition-all dark:bg-amber-950/20 dark:border-amber-900/40 dark:hover:bg-amber-950/30"
+                    >
+                        <AlertTriangle size={18} className="text-amber-500 shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                                {!lastAssessment
+                                    ? "Nenhuma avaliação registrada — realize a anamnese inicial"
+                                    : `Reavaliação pendente — última foi há ${daysSince} dias`}
+                            </p>
+                            <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                                Clique aqui para registrar uma nova avaliação
+                            </p>
+                        </div>
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 underline shrink-0">
+                            Avaliar agora →
+                        </span>
+                    </Link>
+                )}
+
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
 
                     {/* ── COLUNA ESQUERDA ── */}

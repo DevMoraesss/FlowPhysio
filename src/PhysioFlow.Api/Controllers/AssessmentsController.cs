@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Enums;
+
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -52,11 +54,34 @@ public class AssessmentsController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(AssessmentResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AssessmentResponse>> Create([FromBody] CreateAssessmentRequest request)
     {
         if (!await IsOwnedByCurrentUser(request.PatientId))
             return NotFound(new { message = "Paciente não encontrado" });
+
+        var existing = (await _assessmentRepository.GetAllByPatientAsync(request.PatientId))
+            .OrderByDescending(a => a.AssessmentDate)
+            .ToList();
+
+        var latest = existing.FirstOrDefault();
+
+        if (request.Type == AssessmentType.Initial && latest != null)
+            return BadRequest(new { message = "Este paciente já possui uma avaliação inicial. Use 'Reavaliação Trimestral' para registrar uma nova avaliação." });
+
+        if (request.Type == AssessmentType.QuarterlyReassessment)
+        {
+            if (latest == null)
+                return BadRequest(new { message = "Realize a Avaliação Inicial antes de registrar uma reavaliação." });
+
+            var daysSince = (DateTime.UtcNow - latest.AssessmentDate).TotalDays;
+            if (daysSince < 90)
+            {
+                var daysLeft = (int)Math.Ceiling(90 - daysSince);
+                return BadRequest(new { message = $"Reavaliação disponível em {daysLeft} dia(s). Última avaliação foi há {(int)daysSince} dia(s)." });
+            }
+        }
 
         var assessment = new Assessment
         {
