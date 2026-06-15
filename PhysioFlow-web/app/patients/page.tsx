@@ -1,9 +1,10 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { Search, Plus, Filter, MoreHorizontal, Phone, Mail, User as UserIcon } from "lucide-react";
+import { Dialog } from "@/components/Dialog";
+import { Search, Plus, Filter, MoreHorizontal, Phone, Mail, User as UserIcon, ClipboardList, Pencil, UserX } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 
 export default function PatientsPage() {
@@ -15,7 +16,7 @@ export default function PatientsPage() {
         async function loadPatients() {
             try {
                 const data = await apiFetch("/patients");
-                setPatients(data);
+                setPatients(data.filter((p: any) => p.isActive !== false));
             } catch (err) {
                 console.error("Erro ao carregar pacientes:", err);
             } finally {
@@ -24,6 +25,10 @@ export default function PatientsPage() {
         }
         loadPatients();
     }, []);
+
+    const handlePatientInactivated = (patientId: string) => {
+        setPatients(prev => prev.filter(p => p.id !== patientId));
+    };
 
     const filteredPatients = patients.filter(p =>
         p.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,7 +75,7 @@ export default function PatientsPage() {
                         <div className="col-span-full py-20 text-center text-sage-400">Carregando pacientes...</div>
                     ) : filteredPatients.length > 0 ? (
                         filteredPatients.map((patient) => (
-                            <PatientCard key={patient.id} patient={patient} />
+                            <PatientCard key={patient.id} patient={patient} onInactivate={handlePatientInactivated} />
                         ))
                     ) : (
                         <div className="col-span-full py-20 text-center text-sage-400">Nenhum paciente encontrado.</div>
@@ -81,9 +86,22 @@ export default function PatientsPage() {
     );
 }
 
-function PatientCard({ patient }: { patient: any }) {
-    // birthDate vem como "1990-05-15" (DateOnly do C#)
-    // Adicionamos "T12:00:00" para evitar problema de fuso horário
+function PatientCard({ patient, onInactivate }: { patient: any; onInactivate: (id: string) => void }) {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [inactivating, setInactivating] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const calculateAge = (dateStr: string) => {
         if (!dateStr) return "?";
         try {
@@ -95,6 +113,17 @@ function PatientCard({ patient }: { patient: any }) {
             return age;
         } catch {
             return "?";
+        }
+    };
+
+    const handleInactivate = async () => {
+        setInactivating(true);
+        try {
+            await apiFetch(`/patients/${patient.id}/deactivate`, { method: "PATCH" });
+            onInactivate(patient.id);
+        } catch {
+            setInactivating(false);
+            setDialogOpen(false);
         }
     };
 
@@ -111,17 +140,57 @@ function PatientCard({ patient }: { patient: any }) {
                             <span className="text-xs font-bold uppercase tracking-wider text-sage-400 dark:text-zinc-500">
                                 {calculateAge(patient.birthDate)} anos
                             </span>
-                            {patient.guardianId && (
+                            {Number(calculateAge(patient.birthDate)) < 18 ? (
                                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-500">
                                     MENOR
                                 </span>
-                            )}
+                            ) : patient.guardianId ? (
+                                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-bold text-brand-primary dark:bg-brand-primary/10">
+                                    COM RESPONSÁVEL
+                                </span>
+                            ) : null}
                         </div>
                     </div>
                 </div>
-                <button className="rounded-xl p-2 text-sage-300 hover:bg-sage-50 hover:text-sage-600 dark:text-zinc-600 dark:hover:bg-zinc-800">
-                    <MoreHorizontal size={20} />
-                </button>
+
+                {/* Menu 3 pontinhos */}
+                <div ref={menuRef} className="relative">
+                    <button
+                        onClick={() => setMenuOpen(prev => !prev)}
+                        className="rounded-xl p-2 text-sage-300 hover:bg-sage-50 hover:text-sage-600 dark:text-zinc-600 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                        <MoreHorizontal size={20} />
+                    </button>
+
+                    {menuOpen && (
+                        <div className="absolute right-0 top-full z-40 mt-1 w-52 overflow-hidden rounded-2xl border border-sage-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                            <Link
+                                href={`/patients/${patient.id}`}
+                                onClick={() => setMenuOpen(false)}
+                                className="flex items-center gap-3 px-5 py-3 text-sm text-sage-700 hover:bg-brand-soft hover:text-brand-primary dark:text-zinc-300 dark:hover:bg-brand-primary/10 dark:hover:text-brand-primary transition-colors"
+                            >
+                                <ClipboardList size={15} />
+                                Ver Prontuário
+                            </Link>
+                            <Link
+                                href={`/patients/${patient.id}/edit`}
+                                onClick={() => setMenuOpen(false)}
+                                className="flex items-center gap-3 px-5 py-3 text-sm text-sage-700 hover:bg-brand-soft hover:text-brand-primary dark:text-zinc-300 dark:hover:bg-brand-primary/10 dark:hover:text-brand-primary transition-colors"
+                            >
+                                <Pencil size={15} />
+                                Editar Cadastro
+                            </Link>
+                            <div className="mx-5 my-1 h-px bg-sage-100 dark:bg-zinc-800" />
+                            <button
+                                onClick={() => { setMenuOpen(false); setDialogOpen(true); }}
+                                className="flex w-full items-center gap-3 px-5 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                            >
+                                <UserX size={15} />
+                                Inativar Paciente
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="mt-8 space-y-4">
@@ -134,7 +203,7 @@ function PatientCard({ patient }: { patient: any }) {
                     <span>{patient.phone || "Sem telefone"}</span>
                 </div>
                 {patient.guardianId && (
-                    <div className="flex items-center text-sm text-amber-600 dark:text-amber-500">
+                    <div className="flex items-center text-sm text-brand-primary dark:text-brand-primary/80">
                         <UserIcon size={16} className="mr-3 opacity-60" />
                         <span className="font-medium">Possui responsável legal</span>
                     </div>
@@ -155,6 +224,17 @@ function PatientCard({ patient }: { patient: any }) {
                     Editar
                 </Link>
             </div>
+
+            <Dialog
+                isOpen={dialogOpen}
+                title="Inativar Paciente"
+                message={`Tem certeza que deseja inativar ${patient.fullName}? O paciente ficará oculto nos agendamentos, mas o histórico completo será mantido.`}
+                confirmLabel={inactivating ? "Inativando..." : "Inativar"}
+                cancelLabel="Cancelar"
+                variant="warning"
+                onConfirm={handleInactivate}
+                onCancel={() => setDialogOpen(false)}
+            />
         </div>
     );
 }

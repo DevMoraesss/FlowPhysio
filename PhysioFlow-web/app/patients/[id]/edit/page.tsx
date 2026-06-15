@@ -1,7 +1,8 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowLeft, User, Mail, Phone, Save, Loader2, MapPin, DollarSign, Activity, Calendar } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Save, Loader2, MapPin, DollarSign, Activity, Calendar, Search } from "lucide-react";
+import { CustomSelect } from "@/components/CustomSelect";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -82,9 +83,32 @@ export default function EditPatientPage() {
         }
     };
 
+    const [cepLoading, setCepLoading] = useState(false);
+
+    const fetchCep = async (cep: string) => {
+        const clean = cep.replace(/\D/g, "");
+        if (clean.length !== 8) return;
+        setCepLoading(true);
+        try {
+            const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+            const data = await res.json();
+            if (!data.erro) {
+                setFormData(prev => ({
+                    ...prev,
+                    street: data.logradouro || prev.street,
+                    neighborhood: data.bairro || prev.neighborhood,
+                    city: data.localidade || prev.city,
+                    state: data.uf || prev.state,
+                }));
+            }
+        } catch {}
+        finally { setCepLoading(false); }
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === "zipCode") fetchCep(value);
     };
 
     if (loading) return (
@@ -148,8 +172,8 @@ export default function EditPatientPage() {
                             <h3 className="text-xl font-bold text-sage-700 dark:text-white">Endereço</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputGroup label="CEP" icon={<MapPin size={18} />}>
-                                <input type="text" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="00000-000" className="wellness-input" />
+                            <InputGroup label="CEP" icon={cepLoading ? <Loader2 size={18} className="animate-spin text-brand-primary" /> : <Search size={18} />}>
+                                <input type="text" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="00000-000" maxLength={9} className="wellness-input" />
                             </InputGroup>
                             <InputGroup label="Cidade" icon={<MapPin size={18} />}>
                                 <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="São Paulo" className="wellness-input" />
@@ -188,22 +212,17 @@ export default function EditPatientPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-2">
                                 <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">Ciclo</label>
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
-                                        <Activity size={18} />
-                                    </div>
-                                    <select
-                                        name="paymentCycle"
-                                        value={formData.paymentCycle}
-                                        onChange={handleInputChange}
-                                        className="wellness-input"
-                                    >
-                                        <option value="1">Por Sessão (paga na hora)</option>
-                                        <option value="2">Quinzenal</option>
-                                        <option value="3">Mensal</option>
-                                        <option value="4">Semanal</option>
-                                    </select>
-                                </div>
+                                <CustomSelect
+                                    value={formData.paymentCycle}
+                                    onChange={(value) => setFormData(prev => ({ ...prev, paymentCycle: value }))}
+                                    options={[
+                                        { value: "1", label: "Por Sessão (paga na hora)" },
+                                        { value: "2", label: "Quinzenal" },
+                                        { value: "3", label: "Mensal" },
+                                        { value: "4", label: "Semanal" },
+                                    ]}
+                                    icon={<Activity size={18} />}
+                                />
                             </div>
 
                             {formData.paymentCycle !== "1" && (
