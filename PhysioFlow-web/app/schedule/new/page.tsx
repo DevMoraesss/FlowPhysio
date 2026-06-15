@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/Sidebar";
 import { ArrowLeft, User, Calendar, Clock, DollarSign, FileText, Save, Loader2, Info } from "lucide-react";
+import { CustomSelect } from "@/components/CustomSelect";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -59,12 +60,8 @@ function NewAppointmentForm() {
         try {
             const data = await apiFetch(`/patients/${patientId}`);
             setSelectedPatient(data);
-            if (data.paymentCycle === 1) {
-                if (data.defaultSessionValue) {
-                    setFormData(prev => ({ ...prev, sessionValue: String(data.defaultSessionValue) }));
-                }
-            } else {
-                setFormData(prev => ({ ...prev, sessionValue: "0" }));
+            if (data.defaultSessionValue) {
+                setFormData(prev => ({ ...prev, sessionValue: String(data.defaultSessionValue) }));
             }
         } catch {
             // silencia erro
@@ -146,26 +143,15 @@ function NewAppointmentForm() {
                         </div>
 
                         <Field label="Selecione o Paciente">
-                            <div className="relative">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
-                                    <User size={18} />
-                                </div>
-                                <select
-                                    name="patientId"
-                                    required
-                                    value={formData.patientId}
-                                    onChange={(e) => handlePatientChange(e.target.value)}
-                                    disabled={loadingPatients}
-                                    className="wellness-input appearance-none"
-                                >
-                                    <option value="">
-                                        {loadingPatients ? "Carregando..." : "Selecione o paciente"}
-                                    </option>
-                                    {patients.map(p => (
-                                        <option key={p.id} value={p.id}>{p.fullName}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <CustomSelect
+                                value={formData.patientId}
+                                onChange={(value) => handlePatientChange(value)}
+                                options={patients.map(p => ({ value: p.id, label: p.fullName }))}
+                                placeholder={loadingPatients ? "Carregando..." : "Selecione o paciente"}
+                                disabled={loadingPatients}
+                                icon={<User size={18} />}
+                                required
+                            />
                         </Field>
 
                         {loadingPatient && (
@@ -261,35 +247,30 @@ function NewAppointmentForm() {
                         </div>
 
                         <div className="space-y-5">
-                            {(!selectedPatient || selectedPatient.paymentCycle === 1) ? (
-                                <Field label="Valor da Sessão (R$)">
-                                    <div className="relative">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
-                                            <DollarSign size={18} />
-                                        </div>
-                                        <input
-                                            type="number"
-                                            name="sessionValue"
-                                            required
-                                            step="0.01"
-                                            min="0"
-                                            placeholder="150,00"
-                                            value={formData.sessionValue}
-                                            onChange={handleChange}
-                                            className="wellness-input"
-                                        />
+                            <Field label="Valor da Sessão (R$)">
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
+                                        <DollarSign size={18} />
                                     </div>
-                                </Field>
-                            ) : (
-                                <div className="rounded-2xl bg-brand-soft p-5 border border-brand-primary/20 dark:bg-brand-primary/10 dark:border-brand-primary/30">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <DollarSign size={16} className="text-brand-primary" />
-                                        <p className="text-sm font-bold text-brand-secondary dark:text-brand-primary">
-                                            Cobrança {selectedPatient.paymentCycle === 3 ? "Mensal" : selectedPatient.paymentCycle === 4 ? "Semanal" : "Quinzenal"}
-                                        </p>
-                                    </div>
-                                    <p className="text-xs text-brand-secondary/70 dark:text-brand-primary/70 ml-6">
-                                        Este paciente possui um plano fixo. O valor não precisa ser lançado por sessão e será contabilizado como R$ 0,00 no agendamento.
+                                    <input
+                                        type="number"
+                                        name="sessionValue"
+                                        required
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="150,00"
+                                        value={formData.sessionValue}
+                                        onChange={handleChange}
+                                        className="wellness-input"
+                                    />
+                                </div>
+                            </Field>
+
+                            {selectedPatient && selectedPatient.paymentCycle !== 1 && (
+                                <div className="flex items-center gap-2 rounded-2xl bg-brand-soft/60 px-4 py-3 border border-brand-primary/20 dark:bg-brand-primary/10 dark:border-brand-primary/20">
+                                    <Info size={14} className="text-brand-primary shrink-0" />
+                                    <p className="text-xs text-brand-secondary dark:text-brand-primary">
+                                        Cobrança {selectedPatient.paymentCycle === 3 ? "mensal" : selectedPatient.paymentCycle === 4 ? "semanal" : "quinzenal"} — o valor é registrado por sessão e cobrado depois via Financeiro.
                                     </p>
                                 </div>
                             )}

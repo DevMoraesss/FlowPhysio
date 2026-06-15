@@ -140,6 +140,21 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         return NoContent();
     }
 
+    [HttpPatch("{id:guid}/activate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> Activate(Guid id)
+    {
+        var physioId = GetCurrentUserId();
+        var patient = await _patientRepository.GetByIdAsync(id);
+        if (patient == null || patient.PhysioId != physioId)
+            return NotFound();
+
+        patient.IsActive = true;
+        await _patientRepository.UpdateAsync(patient);
+        return NoContent();
+    }
+
     private Guid GetCurrentUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier);
