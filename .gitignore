@@ -61,7 +61,7 @@ db-mongo/
 postgres_data/
 
 # Docker volumes
-data/
+postgres_data/docker-volumes/
 
 # Vercel
 .vercel
