@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -33,6 +35,7 @@ builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpClient<IStorageService, SupabaseStorageService>();
 
 // Configure JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -96,6 +99,19 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Rate limiting — máximo 10 tentativas por minuto nos endpoints de auth
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 // Configure CORS
 var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(",") ?? new [] {"http://localhost:3000"};
 
@@ -143,6 +159,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    await next();
+});
+
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -151,12 +179,16 @@ app.MapControllers();
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-// Apply migrations automatically in development
-if (app.Environment.IsDevelopment())
+// Aplica migrations automaticamente em todos os ambientes
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<PhysioFlowDbContext>();
     db.Database.Migrate();
 }
 
-app.Run();
+// Usa a porta injetada pelo Railway (ou 8080 por padrão)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+    app.Run($"http://+:{port}");
+else
+    app.Run();

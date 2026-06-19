@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
+using PhysioFlow.Api.Services;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
 
@@ -14,7 +15,7 @@ public class AttachmentsController : ControllerBase
 {
     private readonly IAttachmentRepository _attachmentRepository;
     private readonly IPatientRepository _patientRepository;
-    private readonly IWebHostEnvironment _env;
+    private readonly IStorageService _storage;
 
     private static readonly string[] AllowedContentTypes =
         ["image/jpeg", "image/png", "application/pdf"];
@@ -24,11 +25,11 @@ public class AttachmentsController : ControllerBase
     public AttachmentsController(
         IAttachmentRepository attachmentRepository,
         IPatientRepository patientRepository,
-        IWebHostEnvironment env)
+        IStorageService storage)
     {
         _attachmentRepository = attachmentRepository;
         _patientRepository = patientRepository;
-        _env = env;
+        _storage = storage;
     }
 
     [HttpGet("patient/{patientId:guid}")]
@@ -47,15 +48,11 @@ public class AttachmentsController : ControllerBase
         var attachment = await _attachmentRepository.GetByIdAsync(id);
         if (attachment == null) return NotFound();
 
-    if (!attachment.PatientId.HasValue || !await IsOwnedByCurrentUser(attachment.PatientId.Value))
-        return NotFound();
+        if (!attachment.PatientId.HasValue || !await IsOwnedByCurrentUser(attachment.PatientId.Value))
+            return NotFound();
 
-
-        if (!System.IO.File.Exists(attachment.FilePath))
-            return NotFound(new { message = "Arquivo não encontrado no servidor" });
-
-        var bytes = await System.IO.File.ReadAllBytesAsync(attachment.FilePath);
-        return File(bytes, attachment.ContentType, attachment.FileName);
+        var signedUrl = await _storage.GetSignedUrlAsync(attachment.FilePath);
+        return Redirect(signedUrl);
     }
 
     [HttpPost]
@@ -66,12 +63,11 @@ public class AttachmentsController : ControllerBase
         [FromForm] Guid? assessmentId,
         [FromForm] Guid? evolutionId)
     {
-    if (patientId == null)
-        return BadRequest(new { message = "PatientId é obrigatório para enviar arquivos" });
+        if (patientId == null)
+            return BadRequest(new { message = "PatientId é obrigatório para enviar arquivos" });
 
-    if (!await IsOwnedByCurrentUser(patientId.Value))
-        return NotFound(new { message = "Paciente não encontrado" });
-
+        if (!await IsOwnedByCurrentUser(patientId.Value))
+            return NotFound(new { message = "Paciente não encontrado" });
 
         if (!AllowedContentTypes.Contains(file.ContentType))
             return BadRequest(new { message = "Tipo de arquivo não permitido. Use JPEG, PNG ou PDF." });
@@ -79,18 +75,11 @@ public class AttachmentsController : ControllerBase
         if (file.Length > MaxFileSizeBytes)
             return BadRequest(new { message = "Arquivo muito grande. Máximo permitido: 10MB." });
 
-        var uploadsDir = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads",
-            patientId?.ToString() ?? "geral");
+        if (!await HasValidMagicBytes(file))
+            return BadRequest(new { message = "Conteúdo do arquivo não corresponde ao tipo informado." });
 
-        Directory.CreateDirectory(uploadsDir);
-
-        var uniqueName = $"{Guid.NewGuid()}_{file.FileName}";
-        var filePath = Path.Combine(uploadsDir, uniqueName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
+        using var stream = file.OpenReadStream();
+        var filePath = await _storage.UploadAsync(stream, file.FileName, file.ContentType, patientId.Value);
 
         var attachment = new Attachment
         {
@@ -116,11 +105,26 @@ public class AttachmentsController : ControllerBase
         if (!attachment.PatientId.HasValue || !await IsOwnedByCurrentUser(attachment.PatientId.Value))
             return NotFound();
 
-        if (System.IO.File.Exists(attachment.FilePath))
-            System.IO.File.Delete(attachment.FilePath);
-
+        await _storage.DeleteAsync(attachment.FilePath);
         await _attachmentRepository.DeleteAsync(id);
         return NoContent();
+    }
+
+    private static async Task<bool> HasValidMagicBytes(IFormFile file)
+    {
+        var buffer = new byte[8];
+        using var stream = file.OpenReadStream();
+        var read = await stream.ReadAsync(buffer, 0, buffer.Length);
+        if (read < 4) return false;
+
+        // JPEG: FF D8 FF
+        if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF) return true;
+        // PNG: 89 50 4E 47
+        if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47) return true;
+        // PDF: 25 50 44 46 (%PDF)
+        if (buffer[0] == 0x25 && buffer[1] == 0x50 && buffer[2] == 0x44 && buffer[3] == 0x46) return true;
+
+        return false;
     }
 
     private Guid GetCurrentUserId()

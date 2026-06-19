@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Api.Services;
 
@@ -16,6 +17,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
@@ -32,6 +34,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<UserResponse>> Register([FromBody] CreateUserRequest request)
