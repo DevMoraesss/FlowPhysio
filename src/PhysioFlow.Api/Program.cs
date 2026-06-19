@@ -16,8 +16,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Configure PostgreSQL with EF Core
+// Aceita tanto o formato ADO.NET (Host=...;Port=...) quanto URI (postgresql://...)
+var rawConnString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? "";
+
+if (rawConnString.StartsWith("postgresql://") || rawConnString.StartsWith("postgres://"))
+{
+    var uri = new Uri(rawConnString);
+    var userInfo = uri.UserInfo.Split(':');
+    rawConnString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<PhysioFlowDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(rawConnString));
 
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
