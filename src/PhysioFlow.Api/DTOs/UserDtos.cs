@@ -24,7 +24,9 @@ public class CreateUserRequest
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Senha é obrigatória")]
-    [MinLength(6, ErrorMessage = "Senha deve ter no mínimo 6 caracteres")]
+    [MinLength(8, ErrorMessage = "Senha deve ter no mínimo 8 caracteres")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$",
+        ErrorMessage = "Senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número")]
     public string Password { get; set; } = string.Empty;
 
     public string? Phone { get; set; }

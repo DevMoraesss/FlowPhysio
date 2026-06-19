@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
@@ -22,7 +23,8 @@ public class GuardiansController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<GuardianResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<GuardianResponse>>> GetAll()
     {
-        var guardians = await _guardianRepository.GetAllAsync();
+        var physioId = GetCurrentUserId();
+        var guardians = await _guardianRepository.GetAllByPhysioAsync(physioId);
         return Ok(guardians.Select(MapToResponse));
     }
 
@@ -31,8 +33,9 @@ public class GuardiansController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GuardianResponse>> GetById(Guid id)
     {
+        var physioId = GetCurrentUserId();
         var guardian = await _guardianRepository.GetByIdWithPatientsAsync(id);
-        if (guardian == null)
+        if (guardian == null || !guardian.Patients.Any(p => p.PhysioId == physioId))
             return NotFound();
 
         return Ok(MapToResponse(guardian));
@@ -66,9 +69,12 @@ public class GuardiansController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GuardianResponse>> Update(Guid id, [FromBody] UpdateGuardianRequest request)
     {
-        var guardian = await _guardianRepository.GetByIdAsync(id);
-        if (guardian == null)
+        var physioId = GetCurrentUserId();
+        if (!await _guardianRepository.BelongsToPhysioAsync(id, physioId))
             return NotFound();
+
+        var guardian = await _guardianRepository.GetByIdAsync(id);
+        if (guardian == null) return NotFound();
 
         if (request.FullName != null) guardian.FullName = request.FullName;
         if (request.Cpf != null) guardian.Cpf = request.Cpf;
@@ -91,11 +97,18 @@ public class GuardiansController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Delete(Guid id)
     {
-        if (!await _guardianRepository.ExistsAsync(id))
+        var physioId = GetCurrentUserId();
+        if (!await _guardianRepository.BelongsToPhysioAsync(id, physioId))
             return NotFound();
 
         await _guardianRepository.DeleteAsync(id);
         return NoContent();
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return Guid.Parse(claim!.Value);
     }
 
     private static GuardianResponse MapToResponse(Guardian guardian)

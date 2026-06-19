@@ -38,8 +38,15 @@ public class AppointmentsController : ControllerBase
     [HttpGet("patient/{patientId:guid}")]
     public async Task<ActionResult<IEnumerable<AppointmentResponse>>> GetByPatient(Guid patientId)
     {
+        if (!await IsOwnedByCurrentUser(patientId)) return NotFound();
         var appointments = await _appointmentRepository.GetAllByPatientAsync(patientId);
         return Ok(appointments.Select(MapToResponse));
+    }
+
+    private async Task<bool> IsOwnedByCurrentUser(Guid patientId)
+    {
+        var patient = await _patientRepository.GetByIdAsync(patientId);
+        return patient != null && patient.PhysioId == GetCurrentUserId();
     }
 
     [HttpGet("range")]
