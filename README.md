@@ -1,6 +1,6 @@
 # PhysioFlow
 
-Sistema de gestão clínica para fisioterapeutas — desenvolvido como TCC (Trabalho de Conclusão de Curso).
+Sistema de gestão clínica para fisioterapeutas - desenvolvido como TCC (Trabalho de Conclusão de Curso).
 
 **Stack:** ASP.NET Core 9 · PostgreSQL · Next.js 15 · TypeScript · TailwindCSS
 
@@ -75,13 +75,13 @@ PhysioFlow-web/                 # Frontend Next.js 15 (App Router)
 ```
 User (Fisioterapeuta)
  └── Patient (N)
-      ├── Guardian (0..1)       — responsável legal
+      ├── Guardian (0..1)       - responsável legal
       ├── Appointment (N)
       │    └── Evolution (0..1)
-      ├── Assessment (N)        — anamnese / avaliação
+      ├── Assessment (N)        - anamnese / avaliação
       ├── Protocol (N)
-      │    └── Appointment (N)  — sessões vinculadas ao protocolo
-      └── Attachment (N)        — arquivos e exames
+      │    └── Appointment (N)  - sessões vinculadas ao protocolo
+      └── Attachment (N)        - arquivos e exames
 ```
 
 ---
@@ -120,7 +120,7 @@ User (Fisioterapeuta)
 | Neighborhood        | string?      | não         |                                            |
 | City                | string?      | não         |                                            |
 | State               | string?      | não         |                                            |
-| IsActive            | bool         | sim         | soft delete — inativar não apaga dados     |
+| IsActive            | bool         | sim         | soft delete - inativar não apaga dados     |
 | PaymentCycle        | enum (int)   | sim         | 1=Por Sessão, 2=Quinzenal, 3=Mensal, 4=Semanal |
 | PaymentDay          | string?      | não         | ex: "dia 5", "toda sexta"                  |
 | DefaultSessionValue | decimal?     | não         | valor padrão pré-preenchido no agendamento |
@@ -281,7 +281,7 @@ Frontend disponível em: `http://localhost:3000`
 
 ## Variáveis de Ambiente
 
-### Backend — `src/PhysioFlow.Api/appsettings.json`
+### Backend - `src/PhysioFlow.Api/appsettings.json`
 
 ```json
 {
@@ -299,7 +299,7 @@ Frontend disponível em: `http://localhost:3000`
 
 > Para produção, crie `appsettings.Production.json` (já no `.gitignore`) e sobrescreva os valores sensíveis.
 
-### Frontend — `PhysioFlow-web/.env.local`
+### Frontend - `PhysioFlow-web/.env.local`
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
@@ -316,7 +316,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 | Método | Endpoint            | Descrição                    | Auth |
 |--------|---------------------|------------------------------|------|
 | POST   | /api/auth/register  | Criar conta de fisioterapeuta | ❌   |
-| POST   | /api/auth/login     | Login — retorna JWT (24h)    | ❌   |
+| POST   | /api/auth/login     | Login - retorna JWT (24h)    | ❌   |
 
 **Resposta do login:**
 ```json
@@ -509,7 +509,7 @@ curl -X POST http://localhost:5000/api/appointments \
   }'
 ```
 
-### 5. Concluir sessão — paciente paga na hora (Pix)
+### 5. Concluir sessão - paciente paga na hora (Pix)
 
 ```bash
 curl -X PUT http://localhost:5000/api/appointments/GUID_DO_AGENDAMENTO \
@@ -518,7 +518,7 @@ curl -X PUT http://localhost:5000/api/appointments/GUID_DO_AGENDAMENTO \
   -d '{ "status": 2, "paymentStatus": 2, "paymentMethod": 1 }'
 ```
 
-### 6. Concluir sessão — paciente mensal (pagamento fica pendente)
+### 6. Concluir sessão - paciente mensal (pagamento fica pendente)
 
 ```bash
 curl -X PUT http://localhost:5000/api/appointments/GUID_DO_AGENDAMENTO \
@@ -627,4 +627,4 @@ cd PhysioFlow-web && npm run dev
 
 ---
 
-© 2026 — PhysioFlow · Desenvolvido por Juan Moraes como TCC
+© 2026 - PhysioFlow · Desenvolvido por Juan Moraes como TCC
