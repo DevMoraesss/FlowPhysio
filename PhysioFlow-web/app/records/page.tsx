@@ -152,7 +152,7 @@ export default function RecordsPage() {
                                             <div>
                                                 <p className="text-xs text-sage-400 dark:text-zinc-500">Última sessão</p>
                                                 <p className="text-sm font-bold text-sage-700 dark:text-white">
-                                                    {lastEvo ? formatDate(lastEvo.createdAt) : "—"}
+                                                    {lastEvo ? formatDate(lastEvo.createdAt) : "-"}
                                                 </p>
                                             </div>
                                         </div>
@@ -164,7 +164,7 @@ export default function RecordsPage() {
                                                 <p className="text-sm font-bold text-sage-700 dark:text-white max-w-[200px] truncate">
                                                     {lastEvo?.clinicalNotes
                                                         ? lastEvo.clinicalNotes.substring(0, 40) + "..."
-                                                        : "—"}
+                                                        : "-"}
                                                 </p>
                                             </div>
                                         </div>

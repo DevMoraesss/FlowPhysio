@@ -59,9 +59,10 @@ public class PendingPaymentResponse
     public Guid PatientId { get; set; }
     public string PatientName { get; set; } = string.Empty;
     public int PaymentCycle { get; set; }
-    public string? PaymentDay { get; set; }
+    public int? PaymentDay { get; set; }
     public int PendingSessions { get; set; }
     public decimal TotalPending { get; set; }
+    public DateTime? OldestPendingSession { get; set; }
     public List<Guid> AppointmentIds { get; set; } = new();
 }
 

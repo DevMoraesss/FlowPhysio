@@ -126,7 +126,7 @@ export default function SettingsPage() {
 
                         <div className="space-y-6">
 
-                            {/* Email — só leitura */}
+                            {/* Email - só leitura */}
                             <div className="space-y-2">
                                 <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">
                                     Email (não editável)

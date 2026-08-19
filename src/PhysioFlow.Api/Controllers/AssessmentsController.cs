@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
+using PhysioFlow.Domain.Enums;
 using PhysioFlow.Domain.Interfaces;
 
 namespace PhysioFlow.Api.Controllers;
@@ -12,6 +13,9 @@ namespace PhysioFlow.Api.Controllers;
 [Authorize]
 public class AssessmentsController : ControllerBase
 {
+    // Intervalo mínimo entre a última avaliação e uma reavaliação trimestral (RF05)
+    private const int ReassessmentIntervalDays = 90;
+
     private readonly IAssessmentRepository _assessmentRepository;
     private readonly IPatientRepository _patientRepository;
 
@@ -52,17 +56,41 @@ public class AssessmentsController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(AssessmentResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AssessmentResponse>> Create([FromBody] CreateAssessmentRequest request)
     {
         if (!await IsOwnedByCurrentUser(request.PatientId))
             return NotFound(new { message = "Paciente não encontrado" });
 
+        var assessmentDateUtc = DateTime.SpecifyKind(request.AssessmentDate, DateTimeKind.Utc);
+        var existing = (await _assessmentRepository.GetAllByPatientAsync(request.PatientId)).ToList();
+
+        if (request.Type == AssessmentType.Initial &&
+            existing.Any(a => a.Type == AssessmentType.Initial))
+        {
+            return BadRequest(new { message = "Este paciente já possui uma avaliação inicial. Registre uma reavaliação trimestral." });
+        }
+
+        if (request.Type == AssessmentType.QuarterlyReassessment)
+        {
+            var lastAssessment = existing.OrderByDescending(a => a.AssessmentDate).FirstOrDefault();
+            if (lastAssessment == null)
+                return BadRequest(new { message = "Ainda não há avaliação inicial registrada. Crie a avaliação inicial primeiro." });
+
+            var daysSinceLast = (assessmentDateUtc.Date - lastAssessment.AssessmentDate.Date).Days;
+            if (daysSinceLast < ReassessmentIntervalDays)
+            {
+                var daysLeft = ReassessmentIntervalDays - daysSinceLast;
+                return BadRequest(new { message = $"A última avaliação foi há {daysSinceLast} dia(s). A reavaliação trimestral só pode ser registrada após {ReassessmentIntervalDays} dias (faltam {daysLeft})." });
+            }
+        }
+
         var assessment = new Assessment
         {
             PatientId = request.PatientId,
             Type = request.Type,
-            AssessmentDate = DateTime.SpecifyKind(request.AssessmentDate, DateTimeKind.Utc),
+            AssessmentDate = assessmentDateUtc,
             AnamnesisAnswers = request.AnamnesisAnswers,
             GeneralNotes = request.GeneralNotes
         };

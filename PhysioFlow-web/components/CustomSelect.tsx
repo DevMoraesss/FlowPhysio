@@ -90,7 +90,7 @@ export function CustomSelect({
             />
 
             {open && (
-                <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl border border-sage-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-72 overflow-y-auto rounded-2xl border border-sage-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
                     {options.map(option => (
                         <button
                             key={option.value}

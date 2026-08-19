@@ -1,4 +1,4 @@
-# PhysioFlow — Frontend
+# PhysioFlow - Frontend
 
 Interface web do sistema PhysioFlow, construída com **Next.js 15** (App Router), **TypeScript** e **TailwindCSS**.
 
@@ -65,7 +65,7 @@ PhysioFlow-web/
 │   │           ├── page.tsx              # Lista de protocolos
 │   │           └── new/page.tsx          # Novo protocolo
 │   ├── payments/page.tsx         # Financeiro (pendentes + histórico)
-│   ├── records/page.tsx          # Prontuários — busca rápida por paciente
+│   ├── records/page.tsx          # Prontuários - busca rápida por paciente
 │   └── settings/page.tsx         # Perfil do fisioterapeuta
 │
 ├── components/
@@ -98,7 +98,7 @@ O PhysioFlow usa um tema personalizado de **saúde e bem-estar** com tons verdes
 - **Sombra:** classe `wellness-shadow` (sombra suave e difusa)
 - **Tipografia:** serif para títulos (`font-serif`), sans-serif para texto corrido
 - **Dark mode:** todas as telas suportam tema escuro via classes `dark:`
-- **Inputs:** classe `wellness-input` — bordas arredondadas, foco com anel teal
+- **Inputs:** classe `wellness-input` - bordas arredondadas, foco com anel teal
 - **Loading:** spinner com `border-brand-primary border-t-transparent animate-spin`
 - **Badges de status:** arredondados (`rounded-full`), fundo suave + texto colorido
 
@@ -108,7 +108,7 @@ O PhysioFlow usa um tema personalizado de **saúde e bem-estar** com tons verdes
 
 ---
 
-### Login — `/login`
+### Login - `/login`
 
 Tela de entrada do sistema.
 
@@ -127,7 +127,7 @@ Tela de entrada do sistema.
 
 ---
 
-### Cadastro — `/register`
+### Cadastro - `/register`
 
 Criação de conta de fisioterapeuta.
 
@@ -140,7 +140,7 @@ Criação de conta de fisioterapeuta.
 
 ---
 
-### Dashboard — `/dashboard`
+### Dashboard - `/dashboard`
 
 Visão geral do dia atual.
 
@@ -175,7 +175,7 @@ Visão geral do dia atual.
 
 ---
 
-### Agenda — `/schedule`
+### Agenda - `/schedule`
 
 Calendário completo de agendamentos.
 
@@ -184,7 +184,7 @@ Calendário completo de agendamentos.
 ┌─────────────────────────────────────────────────────┐
 │  Minha Agenda            [+ Novo Agendamento]       │
 ├─────────────────────────────────────────────────────┤
-│  FullCalendar — visualização Semana/Mês/Dia         │
+│  FullCalendar - visualização Semana/Mês/Dia         │
 │                                                     │
 │  Eventos coloridos por status:                      │
 │  🔵 Azul claro  = Agendada                          │
@@ -235,7 +235,7 @@ Calendário completo de agendamentos.
 
 ---
 
-### Novo Agendamento — `/schedule/new`
+### Novo Agendamento - `/schedule/new`
 
 Formulário de criação de agendamento.
 
@@ -243,7 +243,7 @@ Formulário de criação de agendamento.
 - Select de paciente com busca (filtra conforme digita)
 - Ao selecionar paciente: mostra card com ciclo de pagamento e valor padrão
 - Campos: data, hora início, hora fim, valor da sessão (pré-preenchido com valor padrão do paciente), observações
-- Se paciente tiver ciclo Quinzenal/Mensal/Semanal: mostra badge informativo "Cobrança [ciclo] — será cobrada depois"
+- Se paciente tiver ciclo Quinzenal/Mensal/Semanal: mostra badge informativo "Cobrança [ciclo] - será cobrada depois"
 - Se paciente Por Sessão: mostra select de forma de pagamento
 
 **Comportamento:**
@@ -252,7 +252,7 @@ Formulário de criação de agendamento.
 
 ---
 
-### Lista de Pacientes — `/patients`
+### Lista de Pacientes - `/patients`
 
 **Visual:**
 ```
@@ -280,15 +280,15 @@ Formulário de criação de agendamento.
 
 ---
 
-### Cadastrar Paciente — `/patients/new`
+### Cadastrar Paciente - `/patients/new`
 
 Formulário extenso dividido em seções.
 
 **Seções:**
-1. **Dados Pessoais** — Nome*, Data de Nascimento*, CPF, Telefone, Email
-2. **Endereço** — CEP, Logradouro, Número, Complemento, Bairro, Cidade, Estado
-3. **Pagamento** — Ciclo (Por Sessão / Quinzenal / Mensal / Semanal), Dia de pagamento (texto livre), Valor padrão por sessão
-4. **Responsável Legal** — toggle para ativar; se ativo: Nome*, Telefone*, Email, CPF, Endereço
+1. **Dados Pessoais** - Nome*, Data de Nascimento*, CPF, Telefone, Email
+2. **Endereço** - CEP, Logradouro, Número, Complemento, Bairro, Cidade, Estado
+3. **Pagamento** - Ciclo (Por Sessão / Quinzenal / Mensal / Semanal), Dia de pagamento (texto livre), Valor padrão por sessão
+4. **Responsável Legal** - toggle para ativar; se ativo: Nome*, Telefone*, Email, CPF, Endereço
 
 **Comportamento:**
 - Dia de pagamento e valor padrão aparecem apenas quando ciclo ≠ Por Sessão
@@ -297,7 +297,7 @@ Formulário extenso dividido em seções.
 
 ---
 
-### Prontuário do Paciente — `/patients/{id}`
+### Prontuário do Paciente - `/patients/{id}`
 
 Página central de informações de um paciente. Layout em duas colunas.
 
@@ -347,28 +347,28 @@ Página central de informações de um paciente. Layout em duas colunas.
 
 **Header:**
 - Nome + badge Ativo/Inativo
-- Botões: [Editar] [Inativar] — inativar abre Dialog de confirmação
+- Botões: [Editar] [Inativar] - inativar abre Dialog de confirmação
 
 ---
 
-### Editar Paciente — `/patients/{id}/edit`
+### Editar Paciente - `/patients/{id}/edit`
 
 Mesmo formulário do cadastro, pré-preenchido com dados atuais.
 
 ---
 
-### Nova Evolução — `/patients/{id}/evolutions/new`
+### Nova Evolução - `/patients/{id}/evolutions/new`
 
 **Campos:**
 - Procedimentos realizados* (textarea)
 - Técnicas aplicadas (textarea)
-- Escala de dor EVA — slider visual 0–10 com cores (verde→amarelo→vermelho)
+- Escala de dor EVA - slider visual 0–10 com cores (verde→amarelo→vermelho)
 - Notas clínicas* (textarea)
 - Plano para próxima sessão (textarea)
 
 ---
 
-### Nova Avaliação — `/patients/{id}/assessments/new`
+### Nova Avaliação - `/patients/{id}/assessments/new`
 
 **Campos:**
 - Tipo: Avaliação Inicial / Reavaliação Trimestral / Alta Clínica
@@ -383,13 +383,13 @@ Mesmo formulário do cadastro, pré-preenchido com dados atuais.
 
 ---
 
-### Detalhes de Avaliação — `/patients/{id}/assessments/{assessmentId}`
+### Detalhes de Avaliação - `/patients/{id}/assessments/{assessmentId}`
 
 Exibe todas as respostas da anamnese formatadas, com badge do tipo e data.
 
 ---
 
-### Protocolos — `/patients/{id}/protocols`
+### Protocolos - `/patients/{id}/protocols`
 
 Lista visual de todos os protocolos do paciente.
 
@@ -401,7 +401,7 @@ Lista visual de todos os protocolos do paciente.
 │                                                     │
 │  Progresso total ──────────────── 46%              │
 │                                                     │
-│  [Ciclo 1 ✓]  [Ciclo 2 — atual]  [Ciclo 3]         │
+│  [Ciclo 1 ✓]  [Ciclo 2 - atual]  [Ciclo 3]         │
 │   ●●●●●●●●●●   ●●●●○○○○○○        ○○○○○○○○○○       │
 │               4/10 sessões                          │
 │                                                     │
@@ -419,7 +419,7 @@ Lista visual de todos os protocolos do paciente.
 
 ---
 
-### Novo Protocolo — `/patients/{id}/protocols/new`
+### Novo Protocolo - `/patients/{id}/protocols/new`
 
 **Campos:**
 - Nome do tratamento*
@@ -428,7 +428,7 @@ Lista visual de todos os protocolos do paciente.
 
 ---
 
-### Financeiro — `/payments`
+### Financeiro - `/payments`
 
 Duas abas: **Pendentes** e **Histórico**.
 
@@ -468,7 +468,7 @@ Duas abas: **Pendentes** e **Histórico**.
 
 ---
 
-### Prontuários — `/records`
+### Prontuários - `/records`
 
 Busca rápida por paciente com visão de histórico clínico.
 
@@ -494,7 +494,7 @@ Busca rápida por paciente com visão de histórico clínico.
 
 ---
 
-### Configurações — `/settings`
+### Configurações - `/settings`
 
 Perfil do fisioterapeuta.
 
@@ -515,7 +515,7 @@ Perfil do fisioterapeuta.
 
 ## Componentes Compartilhados
 
-### Sidebar — `components/Sidebar.tsx`
+### Sidebar - `components/Sidebar.tsx`
 
 Menu lateral fixo (largura 256px) presente em todas as telas autenticadas.
 
@@ -536,7 +536,7 @@ Menu lateral fixo (largura 256px) presente em todas as telas autenticadas.
 
 ---
 
-### Dialog — `components/Dialog.tsx`
+### Dialog - `components/Dialog.tsx`
 
 Modal reutilizável para confirmações e alertas. Substitui `window.alert()` e `window.confirm()` do browser.
 
@@ -555,9 +555,9 @@ Modal reutilizável para confirmações e alertas. Substitui `window.alert()` e 
 ```
 
 **Variantes visuais:**
-- `default` — botão teal (brand-primary)
-- `warning` — botão âmbar (ações reversíveis como encerrar protocolo)
-- `danger` — botão vermelho (ações destrutivas como excluir arquivo)
+- `default` - botão teal (brand-primary)
+- `warning` - botão âmbar (ações reversíveis como encerrar protocolo)
+- `danger` - botão vermelho (ações destrutivas como excluir arquivo)
 
 **z-index:** 60 (acima do modal de agenda que usa z-50)
 
@@ -565,7 +565,7 @@ Modal reutilizável para confirmações e alertas. Substitui `window.alert()` e 
 
 ## Autenticação e API
 
-### `lib/api.ts` — apiFetch
+### `lib/api.ts` - apiFetch
 
 Wrapper sobre `fetch` com:
 

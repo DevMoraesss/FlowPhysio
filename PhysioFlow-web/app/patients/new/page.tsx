@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { paymentDayOptions } from "@/lib/paymentDay";
 
 export default function NewPatientPage() {
     const router = useRouter();
@@ -101,7 +102,7 @@ export default function NewPatientPage() {
                     state: formData.state || null,
                     guardianId,
                     paymentCycle: Number(formData.paymentCycle),
-                    paymentDay: formData.paymentDay || null,
+                    paymentDay: formData.paymentDay ? Number(formData.paymentDay) : null,
                     defaultSessionValue: formData.defaultSessionValue ? parseFloat(formData.defaultSessionValue) : null,
                 }),
             });
@@ -144,7 +145,7 @@ export default function NewPatientPage() {
 
                 <form onSubmit={handleSubmit} className="mx-auto max-w-4xl space-y-8">
 
-                    {/* SEÇÃO 1 — Dados Pessoais */}
+                    {/* SEÇÃO 1 - Dados Pessoais */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-8 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
@@ -172,7 +173,7 @@ export default function NewPatientPage() {
                         </div>
                     </section>
 
-                    {/* SEÇÃO 2 — Endereço do Paciente (só aparece se NÃO tem responsável) */}
+                    {/* SEÇÃO 2 - Endereço do Paciente (só aparece se NÃO tem responsável) */}
                     {!hasResponsible && (
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
 
@@ -211,7 +212,7 @@ export default function NewPatientPage() {
                         </section>
                     )}
 
-                    {/* SEÇÃO — Ciclo de Pagamento */}
+                    {/* SEÇÃO - Ciclo de Pagamento */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-8 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
@@ -227,7 +228,7 @@ export default function NewPatientPage() {
                                 <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">Ciclo</label>
                                 <CustomSelect
                                     value={formData.paymentCycle}
-                                    onChange={(value) => setFormData(prev => ({ ...prev, paymentCycle: value }))}
+                                    onChange={(value) => setFormData(prev => ({ ...prev, paymentCycle: value, paymentDay: "" }))}
                                     options={[
                                         { value: "1", label: "Por Sessão (paga na hora)" },
                                         { value: "2", label: "Quinzenal" },
@@ -250,22 +251,24 @@ export default function NewPatientPage() {
                                 />
                             </InputGroup>
                             {formData.paymentCycle !== "1" && (
-                                <InputGroup label="Dia de Pagamento" icon={<CalendarIcon size={18} />}>
-                                    <input
-                                        type="text"
-                                        name="paymentDay"
+                                <div className="space-y-2">
+                                    <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">
+                                        {formData.paymentCycle === "4" ? "Dia da Semana do Pagamento" : "Dia de Pagamento"}
+                                    </label>
+                                    <CustomSelect
                                         value={formData.paymentDay}
-                                        onChange={handleInputChange}
-                                        placeholder='Ex: "dia 5", "toda sexta", "final do mês"'
-                                        className="wellness-input"
+                                        onChange={(value) => setFormData(prev => ({ ...prev, paymentDay: value }))}
+                                        options={paymentDayOptions(formData.paymentCycle)}
+                                        placeholder="Selecione o dia"
+                                        icon={<CalendarIcon size={18} />}
                                     />
-                                </InputGroup>
+                                </div>
                             )}
                         </div>
                     </section>
 
 
-                    {/* SEÇÃO 3 — Responsável Legal */}
+                    {/* SEÇÃO 3 - Responsável Legal */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-8 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -326,7 +329,7 @@ export default function NewPatientPage() {
                             <div className="flex flex-col items-center justify-center py-10 text-center rounded-2xl border-2 border-dashed border-sage-100 dark:border-zinc-800">
                                 <Activity size={48} className="text-sage-100 dark:text-zinc-800 mb-4" />
                                 <p className="max-w-xs text-sm text-sage-400 dark:text-zinc-600 font-medium leading-relaxed">
-                                    Paciente adulto — sem necessidade de responsável.
+                                    Paciente adulto - sem necessidade de responsável.
                                 </p>
                             </div>
                         )}

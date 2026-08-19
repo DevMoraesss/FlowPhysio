@@ -145,7 +145,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </div>
                                             <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS_BADGE[appt.status] ?? "bg-zinc-100 text-zinc-400"}`}>
-                                                {STATUS_LABEL[appt.status] ?? "—"}
+                                                {STATUS_LABEL[appt.status] ?? "-"}
                                             </span>
                                         </Link>
                                     ))}

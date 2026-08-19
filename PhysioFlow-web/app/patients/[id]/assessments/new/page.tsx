@@ -16,6 +16,7 @@ export default function NewAssessmentPage() {
 
     const [patient, setPatient] = useState<any>(null);
     const [lastAssessment, setLastAssessment] = useState<any>(null);
+    const [hasInitial, setHasInitial] = useState(false);
     const [loadingCheck, setLoadingCheck] = useState(true);
 
     const [assessmentType, setAssessmentType] = useState("1");
@@ -68,6 +69,7 @@ export default function NewAssessmentPage() {
                 (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
             );
             setLastAssessment(sorted[0] ?? null);
+            setHasInitial(assessmentsData.some((a: any) => a.type === 1));
             const age = Math.floor(
                 (Date.now() - new Date(patientData.birthDate + "T12:00:00").getTime()) /
                 (365.25 * 24 * 60 * 60 * 1000)
@@ -90,19 +92,20 @@ export default function NewAssessmentPage() {
             { value: "respiratorio", label: "Respiratório" },
         ];
 
+    // Espelha as regras do backend (POST /assessments): dias contados a partir da data escolhida no formulário
     const daysSinceLast = lastAssessment
-        ? Math.floor((Date.now() - new Date(lastAssessment.assessmentDate).getTime()) / (1000 * 60 * 60 * 24))
+        ? Math.floor((new Date(assessmentDate + "T12:00:00").getTime() - new Date(lastAssessment.assessmentDate).getTime()) / (1000 * 60 * 60 * 24))
         : null;
     const daysLeft = daysSinceLast !== null ? Math.max(0, 90 - daysSinceLast) : 0;
 
     const blockReason: string | null = (() => {
         if (loadingCheck) return null;
-        if (assessmentType === "1" && lastAssessment)
-            return "Já existe uma avaliação inicial — considere usar 'Reavaliação Trimestral'.";
+        if (assessmentType === "1" && hasInitial)
+            return "Este paciente já possui uma avaliação inicial - use 'Reavaliação Trimestral'.";
         if (assessmentType === "2" && !lastAssessment)
-            return "Ainda não há avaliação inicial registrada — considere criar uma primeiro.";
+            return "Ainda não há avaliação registrada - crie a avaliação inicial primeiro.";
         if (assessmentType === "2" && daysSinceLast !== null && daysSinceLast < 90)
-            return `Última avaliação foi há ${daysSinceLast} dia(s). Reavaliação recomendada após 90 dias (faltam ${daysLeft}).`;
+            return `Última avaliação foi há ${daysSinceLast} dia(s). A reavaliação trimestral só pode ser registrada após 90 dias (faltam ${daysLeft}).`;
         return null;
     })();
 
@@ -165,7 +168,7 @@ export default function NewAssessmentPage() {
                     <div className="mx-auto max-w-4xl mb-6 flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 dark:bg-amber-950/20 dark:border-amber-900/40">
                         <Lock size={18} className="text-amber-500 shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Aviso</p>
+                            <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Bloqueado</p>
                             <p className="text-sm text-amber-600 dark:text-amber-500 mt-0.5">{blockReason}</p>
                         </div>
                     </div>
@@ -244,7 +247,7 @@ export default function NewAssessmentPage() {
                         <Link href={`/patients/${id}`} className="px-8 py-4 text-sm font-bold text-sage-500 hover:text-sage-700 transition-colors">
                             Cancelar
                         </Link>
-                        <button type="submit" disabled={saving}
+                        <button type="submit" disabled={saving || blockReason !== null}
                             className="flex items-center gap-2 rounded-2xl bg-brand-primary px-10 py-4 font-bold text-white shadow-xl shadow-brand-primary/20 transition-all hover:bg-brand-secondary hover:translate-y-[-2px] disabled:opacity-50">
                             {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                             Salvar Avaliação
@@ -261,7 +264,7 @@ export default function NewAssessmentPage() {
 function OrtopedicoForm({ answers, onChange }: any) {
     return (
         <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
-            <SectionHead title="Anamnese — Ortopédico" />
+            <SectionHead title="Anamnese - Ortopédico" />
             <div className="space-y-8">
                 <F label="Queixa Principal *">
                     <textarea name="queixaPrincipal" required rows={2} value={answers.queixaPrincipal} onChange={onChange}
@@ -326,7 +329,7 @@ function OrtopedicoForm({ answers, onChange }: any) {
 function NeuroAdultoForm({ answers, onChange }: any) {
     return (
         <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
-            <SectionHead title="Anamnese — Neuro Adulto" />
+            <SectionHead title="Anamnese - Neuro Adulto" />
             <div className="space-y-10">
                 <div>
                     <p className={grp}>Identificação Clínica</p>
@@ -384,7 +387,7 @@ function NeuroAdultoForm({ answers, onChange }: any) {
 function NeuroInfantilForm({ answers, onChange }: any) {
     return (
         <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
-            <SectionHead title="Anamnese — Neuro Infantil" />
+            <SectionHead title="Anamnese - Neuro Infantil" />
             <div className="space-y-10">
                 <div>
                     <p className={grp}>Identificação Clínica</p>
@@ -447,7 +450,7 @@ function NeuroInfantilForm({ answers, onChange }: any) {
 function RespiratorioForm({ answers, onChange }: any) {
     return (
         <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
-            <SectionHead title="Anamnese — Respiratório" />
+            <SectionHead title="Anamnese - Respiratório" />
             <div className="space-y-10">
                 <div>
                     <p className={grp}>Identificação Clínica</p>
@@ -508,11 +511,11 @@ function RespiratorioForm({ answers, onChange }: any) {
                         </F>
                         <F label="Dispneia (Escala MRC 0–4)">
                             <select name="dispneiaMRC" value={answers.dispneiaMRC} onChange={onChange} className={sel}>
-                                <option value="0">0 — Só ao exercício intenso</option>
-                                <option value="1">1 — Ao subir ladeira ou andar rápido</option>
-                                <option value="2">2 — Anda mais devagar que o normal</option>
-                                <option value="3">3 — Para ao andar 100m em plano</option>
-                                <option value="4">4 — Não sai de casa / em repouso</option>
+                                <option value="0">0 - Só ao exercício intenso</option>
+                                <option value="1">1 - Ao subir ladeira ou andar rápido</option>
+                                <option value="2">2 - Anda mais devagar que o normal</option>
+                                <option value="3">3 - Para ao andar 100m em plano</option>
+                                <option value="4">4 - Não sai de casa / em repouso</option>
                             </select>
                         </F>
                         <F label="Expansibilidade Torácica"><input name="expansibilidadeToraxica" value={answers.expansibilidadeToraxica} onChange={onChange} placeholder="Ex: Simétrica, reduzida em bases..." className={inp} /></F>

@@ -89,7 +89,7 @@ export default function AssessmentDetailsPage() {
                             <div className="flex items-center gap-3 flex-wrap">
                                 <h1 className="text-3xl font-bold text-sage-700 dark:text-white font-serif">Anamnese Completa</h1>
                                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${assessment.type === 1 ? "bg-brand-soft text-brand-secondary dark:bg-brand-primary/10 dark:text-brand-primary" : assessment.type === 3 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                                    {typeLabel[assessment.type] ?? "—"}
+                                    {typeLabel[assessment.type] ?? "-"}
                                 </span>
                                 {model && (
                                     <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-bold text-sage-500 dark:bg-zinc-800 dark:text-zinc-400">
@@ -261,7 +261,7 @@ function RespiratorioView({ answers }: any) {
     const tabMap: Record<string, string> = { nao: "Não fumante", sim: "Fumante ativo", ex: "Ex-fumante" };
     const o2Map: Record<string, string> = { nao: "Não", sim: "Sim (contínua)", noturna: "Noturna", esforco: "Aos esforços" };
     const tosseMap: Record<string, string> = { ausente: "Ausente", seca: "Seca", produtiva: "Produtiva", "produtiva-purulenta": "Produtiva purulenta" };
-    const mrcMap: Record<string, string> = { "0": "0 — Só ao exercício intenso", "1": "1 — Ladeira/passo rápido", "2": "2 — Anda mais devagar", "3": "3 — Para a 100m", "4": "4 — Sem sair de casa" };
+    const mrcMap: Record<string, string> = { "0": "0 - Só ao exercício intenso", "1": "1 - Ladeira/passo rápido", "2": "2 - Anda mais devagar", "3": "3 - Para a 100m", "4": "4 - Sem sair de casa" };
     return (
         <>
             <Sec icon={<ClipboardList size={20} />} title="Queixa Principal">

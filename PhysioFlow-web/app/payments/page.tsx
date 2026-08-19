@@ -5,6 +5,7 @@ import { DollarSign, CheckCircle, Loader2, User, History, Clock } from "lucide-r
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { formatPaymentDay, getDueInfo } from "@/lib/paymentDay";
 import { Dialog } from "@/components/Dialog";
 
 
@@ -14,6 +15,11 @@ const methodColor: Record<number, string> = {
     1: "bg-green-100 text-green-700",
     2: "bg-amber-100 text-amber-700",
     3: "bg-blue-100 text-blue-700",
+};
+const dueColor: Record<string, string> = {
+    overdue: "bg-rose-100 text-rose-700",
+    today: "bg-amber-100 text-amber-700",
+    upcoming: "bg-zinc-100 text-zinc-600",
 };
 
 // ADICIONAR junto com os outros estados:
@@ -122,6 +128,22 @@ export default function PaymentsPage() {
     const formatTime = (str: string) =>
         new Date(str).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
+    // Pendências ordenadas por urgência: atrasadas (mais antigas primeiro), vence hoje, próximas
+    const dueRank: Record<string, number> = { overdue: 0, today: 1, upcoming: 2 };
+    const pendingWithDue = pending
+        .map((item: any) => ({
+            item,
+            due: getDueInfo(item.paymentCycle, item.paymentDay, item.oldestPendingSession),
+        }))
+        .sort((a, b) => {
+            const ra = a.due ? dueRank[a.due.status] : 3;
+            const rb = b.due ? dueRank[b.due.status] : 3;
+            if (ra !== rb) return ra - rb;
+            if (a.due && b.due)
+                return a.due.status === "overdue" ? b.due.days - a.due.days : a.due.days - b.due.days;
+            return 0;
+        });
+
     return (
         <div className="flex min-h-screen bg-sage-50 dark:bg-zinc-950">
             <Sidebar />
@@ -161,7 +183,7 @@ export default function PaymentsPage() {
                             </div>
                         ) : (
                             <div className="space-y-4 max-w-4xl">
-                                {pending.map((item: any) => (
+                                {pendingWithDue.map(({ item, due }) => (
                                     <div key={item.patientId} className="rounded-[2rem] border border-sage-200 bg-white p-8 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                                         <div className="flex items-start justify-between gap-6">
                                             <div className="flex-1">
@@ -176,10 +198,17 @@ export default function PaymentsPage() {
                                                             {item.patientName}
                                                         </Link>
                                                         <p className="text-xs text-sage-400 dark:text-zinc-500">
-                                                            {cycleLabel[item.paymentCycle] ?? "—"}
-                                                            {item.paymentDay ? ` · ${item.paymentDay}` : ""}
+                                                            {cycleLabel[item.paymentCycle] ?? "-"}
+                                                            {formatPaymentDay(item.paymentCycle, item.paymentDay)
+                                                                ? ` · ${formatPaymentDay(item.paymentCycle, item.paymentDay)}`
+                                                                : ""}
                                                         </p>
                                                     </div>
+                                                    {due && (
+                                                        <span className={`ml-auto rounded-full px-3 py-1 text-xs font-bold ${dueColor[due.status]}`}>
+                                                            {due.label}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-6">
                                                     <div>
@@ -298,7 +327,7 @@ export default function PaymentsPage() {
                                                         <div className="flex items-center gap-4">
                                                             {appt.paymentMethod && (
                                                                 <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${methodColor[appt.paymentMethod] ?? "bg-zinc-100 text-zinc-500"}`}>
-                                                                    {methodLabel[appt.paymentMethod] ?? "—"}
+                                                                    {methodLabel[appt.paymentMethod] ?? "-"}
                                                                 </span>
                                                             )}
                                                             <p className="font-bold text-sage-700 dark:text-white min-w-[80px] text-right">

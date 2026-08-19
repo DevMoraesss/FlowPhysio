@@ -21,7 +21,9 @@ public class Patient : BaseEntity
     public string? State { get; set; }
     public bool IsActive { get; set; } = true;
     public PaymentCycle PaymentCycle { get; set; } = PaymentCycle.PerSession;
-    public string? PaymentDay { get; set; }
+    // Semântica depende do ciclo: Mensal/Quinzenal = dia do mês (1-31);
+    // Semanal = dia da semana (1=segunda ... 7=domingo); Por Sessão = null
+    public int? PaymentDay { get; set; }
     public decimal? DefaultSessionValue { get; set; }
 
 

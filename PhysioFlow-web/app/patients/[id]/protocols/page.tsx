@@ -43,7 +43,7 @@ export default function ProtocolsPage() {
     }
 
     // Chama POST /protocols/{id}/complete-session
-    // Esse endpoint não precisa de body — só o ID na URL
+    // Esse endpoint não precisa de body - só o ID na URL
     async function completeSession(protocolId: string) {
         setCompleting(protocolId);
         try {
@@ -179,7 +179,7 @@ export default function ProtocolsPage() {
                                             </p>
                                         </div>
 
-                                        {/* Botões de ação — só para protocolos ativos */}
+                                        {/* Botões de ação - só para protocolos ativos */}
                                         {protocol.isActive && (
                                             <div className="flex items-center gap-3">
                                                 <button
@@ -243,7 +243,7 @@ export default function ProtocolsPage() {
                                                     }`}>
                                                         Ciclo {cycleNum}
                                                         {isCompleted && " ✓"}
-                                                        {isCurrent && !isCompleted && " — atual"}
+                                                        {isCurrent && !isCompleted && " - atual"}
                                                     </p>
 
                                                     {/* Mini bolinhas representando sessões */}

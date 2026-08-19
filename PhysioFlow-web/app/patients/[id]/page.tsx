@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { formatPaymentDay } from "@/lib/paymentDay";
 import { Dialog } from "@/components/Dialog";
 
 type DialogState = {
@@ -178,7 +179,7 @@ export default function PatientDetailsPage() {
     }, [id]);
 
     const formatDate = (dateStr: string) => {
-        if (!dateStr) return "—";
+        if (!dateStr) return "-";
         const [year, month, day] = dateStr.split("-");
         return `${day}/${month}/${year}`;
     };
@@ -258,8 +259,8 @@ export default function PatientDetailsPage() {
                         <div className="flex-1">
                             <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
                                 {!lastAssessment
-                                    ? "Nenhuma avaliação registrada — realize a anamnese inicial"
-                                    : `Reavaliação pendente — última foi há ${daysSince} dias`}
+                                    ? "Nenhuma avaliação registrada - realize a anamnese inicial"
+                                    : `Reavaliação pendente - última foi há ${daysSince} dias`}
                             </p>
                             <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
                                 Clique aqui para registrar uma nova avaliação
@@ -325,8 +326,9 @@ export default function PatientDetailsPage() {
                             <div className="space-y-4">
                                 <InfoItem icon={<RefreshCw size={15} />} label="Ciclo"
                                     value={cycleLabel[patient.paymentCycle] ?? "Por Sessão"} />
-                                {patient.paymentDay && (
-                                    <InfoItem icon={<Calendar size={15} />} label="Dia de Pagamento" value={patient.paymentDay} />
+                                {formatPaymentDay(patient.paymentCycle, patient.paymentDay) && (
+                                    <InfoItem icon={<Calendar size={15} />} label="Dia de Pagamento"
+                                        value={formatPaymentDay(patient.paymentCycle, patient.paymentDay)!} />
                                 )}
                                 {patient.defaultSessionValue && (
                                     <InfoItem icon={<DollarSign size={15} />} label="Valor padrão / sessão"
@@ -490,8 +492,8 @@ export default function PatientDetailsPage() {
                                     <AlertTriangle size={16} className="text-amber-500 shrink-0" />
                                     <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
                                         {lastAssessment
-                                            ? `Última avaliação há ${daysSince} dias — considere fazer uma reavaliação.`
-                                            : "Nenhuma avaliação registrada — considere fazer uma anamnese inicial."}
+                                            ? `Última avaliação há ${daysSince} dias - considere fazer uma reavaliação.`
+                                            : "Nenhuma avaliação registrada - considere fazer uma anamnese inicial."}
                                     </p>
                                 </div>
                             )}

@@ -67,6 +67,16 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
     if (age < 18 && request.GuardianId == null)
         return BadRequest(new { message = "Paciente menor de 18 anos deve ter um responsável legal" });
 
+    // Validação 3 — ciclo válido e dia de pagamento coerente com o ciclo
+    var paymentCycle = (PaymentCycle)request.PaymentCycle;
+    if (!Enum.IsDefined(paymentCycle))
+        return BadRequest(new { message = "Ciclo de pagamento inválido" });
+
+    var paymentDay = paymentCycle == PaymentCycle.PerSession ? null : request.PaymentDay;
+    var paymentDayError = ValidatePaymentDay(paymentCycle, paymentDay);
+    if (paymentDayError != null)
+        return BadRequest(new { message = paymentDayError });
+
     var patient = new Patient
     {
         PhysioId = physioId,
@@ -83,8 +93,8 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         Neighborhood = request.Neighborhood,
         City = request.City,
         State = request.State,
-        PaymentCycle = (PaymentCycle)request.PaymentCycle,
-        PaymentDay = request.PaymentDay,
+        PaymentCycle = paymentCycle,
+        PaymentDay = paymentDay,
         DefaultSessionValue = request.DefaultSessionValue,
     };
 
@@ -116,10 +126,21 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         if (request.City != null) patient.City = request.City;
         if (request.State != null) patient.State = request.State;
         if (request.GuardianId != null) patient.GuardianId = request.GuardianId;
-        if (request.PaymentCycle != null) patient.PaymentCycle = (PaymentCycle)request.PaymentCycle;
+        if (request.PaymentCycle != null)
+        {
+            var newCycle = (PaymentCycle)request.PaymentCycle;
+            if (!Enum.IsDefined(newCycle))
+                return BadRequest(new { message = "Ciclo de pagamento inválido" });
+            patient.PaymentCycle = newCycle;
+        }
         if (request.PaymentDay != null) patient.PaymentDay = request.PaymentDay;
         if (request.DefaultSessionValue != null) patient.DefaultSessionValue = request.DefaultSessionValue;
 
+        // Dia de pagamento não se aplica a "Por Sessão" e deve ser coerente com o ciclo final
+        if (patient.PaymentCycle == PaymentCycle.PerSession) patient.PaymentDay = null;
+        var paymentDayError = ValidatePaymentDay(patient.PaymentCycle, patient.PaymentDay);
+        if (paymentDayError != null)
+            return BadRequest(new { message = paymentDayError });
 
         await _patientRepository.UpdateAsync(patient);
         return Ok(MapToResponse(patient));
@@ -190,4 +211,18 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
 
     private static string? NormalizeCpf(string? cpf) =>
         string.IsNullOrWhiteSpace(cpf) ? null : new string(cpf.Where(char.IsDigit).ToArray());
+
+    // Mensal/Quinzenal: dia do mês (1-31); Semanal: dia da semana (1=segunda ... 7=domingo)
+    private static string? ValidatePaymentDay(PaymentCycle cycle, int? day)
+    {
+        if (day == null) return null;
+        return cycle switch
+        {
+            PaymentCycle.Weekly when day is < 1 or > 7 =>
+                "Para ciclo semanal, o dia de pagamento deve ser entre 1 (segunda-feira) e 7 (domingo)",
+            PaymentCycle.Monthly or PaymentCycle.Biweekly when day is < 1 or > 31 =>
+                "O dia de pagamento deve ser um dia do mês entre 1 e 31",
+            _ => null
+        };
+    }
 }

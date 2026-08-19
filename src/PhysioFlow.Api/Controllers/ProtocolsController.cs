@@ -102,18 +102,7 @@ public class ProtocolsController : ControllerBase
         if (protocol.CurrentCycle > protocol.TotalCycles)
             return BadRequest(new { message = "Todos os ciclos já foram concluídos" });
 
-        protocol.CompletedSessions++;
-
-        if (protocol.CompletedSessions >= protocol.SessionsPerCycle)
-        {
-            if (protocol.CurrentCycle >= protocol.TotalCycles)
-                protocol.IsActive = false;
-            else
-            {
-                protocol.CurrentCycle++;
-                protocol.CompletedSessions = 0;
-            }
-        }
+        protocol.RegisterCompletedSession();
 
         await _protocolRepository.UpdateAsync(protocol);
         return Ok(MapToResponse(protocol));

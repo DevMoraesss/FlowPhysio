@@ -77,6 +77,7 @@ public class AppointmentsController : ControllerBase
                 PaymentDay = g.First().Patient?.PaymentDay,
                 PendingSessions = g.Count(),
                 TotalPending = g.Sum(a => a.SessionValue),
+                OldestPendingSession = g.Min(a => a.StartDateTime),
                 AppointmentIds = g.Select(a => a.Id).ToList(),
             });
 
@@ -208,32 +209,22 @@ public class AppointmentsController : ControllerBase
 
         await _appointmentRepository.UpdateAsync(appointment);
 
-        // Se ACABOU DE SER marcado como Completed (era outro status antes) e tem protocolo:
-        // avança o progresso do protocolo automaticamente
+        // Sincroniza o progresso do protocolo com a transição de status:
+        // virou Completed → registra sessão; deixou de ser Completed → desfaz sessão
         bool justCompleted = previousStatus != AppointmentStatus.Completed
                              && appointment.Status == AppointmentStatus.Completed;
+        bool justReverted = previousStatus == AppointmentStatus.Completed
+                            && appointment.Status != AppointmentStatus.Completed;
 
-        if (justCompleted && appointment.ProtocolId.HasValue)
+        if ((justCompleted || justReverted) && appointment.ProtocolId.HasValue)
         {
             var protocol = await _protocolRepository.GetByIdAsync(appointment.ProtocolId.Value);
-            if (protocol != null && protocol.IsActive)
+            if (protocol != null)
             {
-                protocol.CompletedSessions++;
-
-                if (protocol.CompletedSessions >= protocol.SessionsPerCycle)
-                {
-                    if (protocol.CurrentCycle >= protocol.TotalCycles)
-                    {
-                        // Último ciclo concluído → encerra o protocolo
-                        protocol.IsActive = false;
-                    }
-                    else
-                    {
-                        // Avança para o próximo ciclo
-                        protocol.CurrentCycle++;
-                        protocol.CompletedSessions = 0;
-                    }
-                }
+                if (justCompleted)
+                    protocol.RegisterCompletedSession();
+                else
+                    protocol.RevertCompletedSession();
 
                 await _protocolRepository.UpdateAsync(protocol);
             }

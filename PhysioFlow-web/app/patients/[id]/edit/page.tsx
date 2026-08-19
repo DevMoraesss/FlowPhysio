@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { paymentDayOptions } from "@/lib/paymentDay";
 
 export default function EditPatientPage() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function EditPatientPage() {
                     city: data.city || "",
                     state: data.state || "",
                     paymentCycle: String(data.paymentCycle ?? 1),
-                    paymentDay: data.paymentDay || "",
+                    paymentDay: data.paymentDay != null ? String(data.paymentDay) : "",
                     defaultSessionValue: data.defaultSessionValue ? String(data.defaultSessionValue) : "",
                 });
             } catch (err: any) {
@@ -72,7 +73,7 @@ export default function EditPatientPage() {
                     city: formData.city || null,
                     state: formData.state || null,
                     paymentCycle: Number(formData.paymentCycle),
-                    paymentDay: formData.paymentDay || null,
+                    paymentDay: formData.paymentDay ? Number(formData.paymentDay) : null,
                     defaultSessionValue: formData.defaultSessionValue ? parseFloat(formData.defaultSessionValue) : null,
                 }),
             });
@@ -214,7 +215,7 @@ export default function EditPatientPage() {
                                 <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">Ciclo</label>
                                 <CustomSelect
                                     value={formData.paymentCycle}
-                                    onChange={(value) => setFormData(prev => ({ ...prev, paymentCycle: value }))}
+                                    onChange={(value) => setFormData(prev => ({ ...prev, paymentCycle: value, paymentDay: "" }))}
                                     options={[
                                         { value: "1", label: "Por Sessão (paga na hora)" },
                                         { value: "2", label: "Quinzenal" },
@@ -226,16 +227,18 @@ export default function EditPatientPage() {
                             </div>
 
                             {formData.paymentCycle !== "1" && (
-                                <InputGroup label="Dia de Pagamento" icon={<Calendar size={18} />}>
-                                    <input
-                                        type="text"
-                                        name="paymentDay"
+                                <div className="space-y-2">
+                                    <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">
+                                        {formData.paymentCycle === "4" ? "Dia da Semana do Pagamento" : "Dia de Pagamento"}
+                                    </label>
+                                    <CustomSelect
                                         value={formData.paymentDay}
-                                        onChange={handleInputChange}
-                                        placeholder='Ex: "dia 5", "toda sexta", "final do mês"'
-                                        className="wellness-input"
+                                        onChange={(value) => setFormData(prev => ({ ...prev, paymentDay: value }))}
+                                        options={paymentDayOptions(formData.paymentCycle)}
+                                        placeholder="Selecione o dia"
+                                        icon={<Calendar size={18} />}
                                     />
-                                </InputGroup>
+                                </div>
                             )}
 
                             <InputGroup label="Valor Padrão por Sessão (R$)" icon={<DollarSign size={18} />}>

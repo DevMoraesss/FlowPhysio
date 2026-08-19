@@ -59,7 +59,6 @@ public class PhysioFlowDbContext : DbContext
             e.Property(x => x.Email).HasMaxLength(200);
             e.Property(x => x.ZipCode).HasMaxLength(10);
             e.Property(x => x.State).HasMaxLength(2);
-            e.Property(x => x.PaymentDay).HasMaxLength(50);
             e.Property(x => x.DefaultSessionValue).HasColumnType("decimal(10,2)");
 
             e.HasOne(x => x.Physio)

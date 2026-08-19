@@ -144,7 +144,7 @@ export default function NewProtocolPage() {
                             </div>
                         </div>
 
-                        {/* Preview do protocolo — atualiza em tempo real */}
+                        {/* Preview do protocolo - atualiza em tempo real */}
                         {formData.treatmentName && totalSessions > 0 && (
                             <div className="rounded-2xl border border-brand-primary/20 bg-brand-soft p-6 dark:bg-brand-primary/5 dark:border-brand-primary/20">
                                 <p className="text-xs font-bold uppercase tracking-widest text-brand-primary mb-3">

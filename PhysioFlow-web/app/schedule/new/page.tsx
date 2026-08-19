@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { formatPaymentDay } from "@/lib/paymentDay";
 
 const cycleLabel: Record<number, string> = {
     1: "Por Sessão",
@@ -133,7 +134,7 @@ function NewAppointmentForm() {
 
                 <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
 
-                    {/* Seção 1 — Paciente */}
+                    {/* Seção 1 - Paciente */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-8 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-6 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
@@ -168,9 +169,9 @@ function NewAppointmentForm() {
                                     <p className="text-xs font-bold text-brand-secondary dark:text-brand-primary">
                                         Ciclo de Pagamento: {cycleLabel[selectedPatient.paymentCycle] ?? "Por Sessão"}
                                     </p>
-                                    {selectedPatient.paymentDay && (
+                                    {formatPaymentDay(selectedPatient.paymentCycle, selectedPatient.paymentDay) && (
                                         <p className="text-xs text-brand-secondary/70 dark:text-brand-primary/70 mt-0.5">
-                                            Paga todo dia: {selectedPatient.paymentDay}
+                                            Pagamento: {formatPaymentDay(selectedPatient.paymentCycle, selectedPatient.paymentDay)}
                                         </p>
                                     )}
                                     {selectedPatient.paymentCycle !== 1 && (
@@ -183,7 +184,7 @@ function NewAppointmentForm() {
                         )}
                     </section>
 
-                    {/* Seção 2 — Data e Horário */}
+                    {/* Seção 2 - Data e Horário */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-8 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-6 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
@@ -237,7 +238,7 @@ function NewAppointmentForm() {
                         </div>
                     </section>
 
-                    {/* Seção 3 — Valor e Observações */}
+                    {/* Seção 3 - Valor e Observações */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-8 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-6 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
@@ -270,7 +271,7 @@ function NewAppointmentForm() {
                                 <div className="flex items-center gap-2 rounded-2xl bg-brand-soft/60 px-4 py-3 border border-brand-primary/20 dark:bg-brand-primary/10 dark:border-brand-primary/20">
                                     <Info size={14} className="text-brand-primary shrink-0" />
                                     <p className="text-xs text-brand-secondary dark:text-brand-primary">
-                                        Cobrança {selectedPatient.paymentCycle === 3 ? "mensal" : selectedPatient.paymentCycle === 4 ? "semanal" : "quinzenal"} — o valor é registrado por sessão e cobrado depois via Financeiro.
+                                        Cobrança {selectedPatient.paymentCycle === 3 ? "mensal" : selectedPatient.paymentCycle === 4 ? "semanal" : "quinzenal"} - o valor é registrado por sessão e cobrado depois via Financeiro.
                                     </p>
                                 </div>
                             )}
@@ -329,7 +330,7 @@ function calcDuration(start: string, end: string): string {
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
     const totalMin = (eh * 60 + em) - (sh * 60 + sm);
-    if (totalMin <= 0) return "—";
+    if (totalMin <= 0) return "-";
     const h = Math.floor(totalMin / 60);
     const m = totalMin % 60;
     if (h === 0) return `${m} min`;
