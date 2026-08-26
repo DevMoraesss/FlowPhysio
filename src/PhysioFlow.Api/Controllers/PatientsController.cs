@@ -60,11 +60,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
 
 
     // Validação 2 — menor de 18 anos deve ter responsável
-    var today = DateOnly.FromDateTime(DateTime.UtcNow);
-    var age = today.Year - request.BirthDate.Year;
-    if (request.BirthDate.AddYears(age) > today) age--;
-
-    if (age < 18 && request.GuardianId == null)
+    if (CalculateAge(request.BirthDate) < 18 && request.GuardianId == null)
         return BadRequest(new { message = "Paciente menor de 18 anos deve ter um responsável legal" });
 
     // Validação 3 — ciclo válido e dia de pagamento coerente com o ciclo
@@ -115,6 +111,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
 
 
         if (request.FullName != null) patient.FullName = request.FullName;
+        if (request.BirthDate != null) patient.BirthDate = request.BirthDate.Value;
         if (request.Phone != null) patient.Phone = request.Phone;
         if (request.Email != null) patient.Email = request.Email;
         if (request.Cpf != null) patient.Cpf = NormalizeCpf(request.Cpf);
@@ -125,7 +122,9 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         if (request.Neighborhood != null) patient.Neighborhood = request.Neighborhood;
         if (request.City != null) patient.City = request.City;
         if (request.State != null) patient.State = request.State;
-        if (request.GuardianId != null) patient.GuardianId = request.GuardianId;
+        // RemoveGuardian tem precedência: permite desvincular o responsável explicitamente
+        if (request.RemoveGuardian == true) patient.GuardianId = null;
+        else if (request.GuardianId != null) patient.GuardianId = request.GuardianId;
         if (request.PaymentCycle != null)
         {
             var newCycle = (PaymentCycle)request.PaymentCycle;
@@ -141,6 +140,10 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         var paymentDayError = ValidatePaymentDay(patient.PaymentCycle, patient.PaymentDay);
         if (paymentDayError != null)
             return BadRequest(new { message = paymentDayError });
+
+        // Menor de 18 anos deve ter responsável legal (mesma regra do cadastro)
+        if (CalculateAge(patient.BirthDate) < 18 && patient.GuardianId == null)
+            return BadRequest(new { message = "Paciente menor de 18 anos deve ter um responsável legal" });
 
         await _patientRepository.UpdateAsync(patient);
         return Ok(MapToResponse(patient));
@@ -207,6 +210,14 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
             PaymentDay = patient.PaymentDay,
             DefaultSessionValue = patient.DefaultSessionValue,
         };
+    }
+
+    private static int CalculateAge(DateOnly birthDate)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var age = today.Year - birthDate.Year;
+        if (birthDate.AddYears(age) > today) age--;
+        return age;
     }
 
     private static string? NormalizeCpf(string? cpf) =>

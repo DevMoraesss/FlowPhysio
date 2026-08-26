@@ -84,8 +84,14 @@ export default function NewAssessmentPage() {
 
     const isMinor = patientAge !== null && patientAge < 18;
 
+    // Criança também pode ter avaliação ortopédica ou respiratória.
+    // Apenas "Neuro Adulto" fica restrito a maiores de 18 anos.
     const availableModels = isMinor
-        ? [{ value: "neuro-infantil", label: "Neuro Infantil / Neurológico" }]
+        ? [
+            { value: "neuro-infantil", label: "Neuro Infantil / Neurológico" },
+            { value: "ortopedico", label: "Ortopédico" },
+            { value: "respiratorio", label: "Respiratório" },
+        ]
         : [
             { value: "ortopedico", label: "Ortopédico" },
             { value: "neuro-adulto", label: "Neuro Adulto" },
@@ -198,7 +204,6 @@ export default function NewAssessmentPage() {
                                     value={assessmentModel}
                                     onChange={setAssessmentModel}
                                     options={availableModels}
-                                    disabled={isMinor}
                                 />
                             </div>
                             <div className="space-y-2">
