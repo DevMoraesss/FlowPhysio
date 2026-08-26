@@ -57,6 +57,7 @@ public class UpdatePatientRequest
 {
     [MaxLength(200)]
     public string? FullName { get; set; }
+    public DateOnly? BirthDate { get; set; }
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? Cpf { get; set; }
@@ -68,6 +69,8 @@ public class UpdatePatientRequest
     public string? City { get; set; }
     public string? State { get; set; }
     public Guid? GuardianId { get; set; }
+    /// <summary>Desvincula o responsável legal (usado quando o cadastro deixa de ter responsável).</summary>
+    public bool? RemoveGuardian { get; set; }
     public int? PaymentCycle { get; set; }
     public int? PaymentDay { get; set; }
     public decimal? DefaultSessionValue { get; set; }

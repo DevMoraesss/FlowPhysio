@@ -1,7 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowLeft, User, Mail, Phone, Save, Loader2, MapPin, DollarSign, Activity, Calendar, Search } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Save, Loader2, MapPin, Activity, Search, DollarSign } from "lucide-react";
 import { CustomSelect } from "@/components/CustomSelect";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -15,21 +15,38 @@ export default function EditPatientPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [hasResponsible, setHasResponsible] = useState(false);
+
+    // Responsável que o paciente já possuía ao abrir a tela (null = nunca teve)
+    const [originalGuardianId, setOriginalGuardianId] = useState<string | null>(null);
+
+    const [cepLoading, setCepLoading] = useState(false);
+    const [cepResLoading, setCepResLoading] = useState(false);
 
     const [formData, setFormData] = useState({
-        fullName: "", email: "", phone: "", cpf: "",
-        zipCode: "", street: "", number: "", complement: "",
-        neighborhood: "", city: "", state: "",
-        paymentCycle: "1", paymentDay: "",
-        defaultSessionValue: "",
+        fullName: "", email: "", phone: "", birthDate: "", cpf: "",
+        zipCode: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "",
+        responsibleFullName: "", responsiblePhone: "", responsibleEmail: "", responsibleCpf: "",
+        responsibleZipCode: "", responsibleStreet: "", responsibleNumber: "",
+        responsibleComplement: "", responsibleNeighborhood: "", responsibleCity: "", responsibleState: "",
+        paymentCycle: "1", paymentDay: "", defaultSessionValue: "",
     });
 
     useEffect(() => {
         async function loadPatient() {
             try {
                 const data = await apiFetch(`/patients/${id}`);
+
+                let guardian: any = null;
+                if (data.guardianId) {
+                    setOriginalGuardianId(data.guardianId);
+                    setHasResponsible(true);
+                    guardian = await apiFetch(`/guardians/${data.guardianId}`).catch(() => null);
+                }
+
                 setFormData({
                     fullName: data.fullName || "",
+                    birthDate: data.birthDate || "",
                     email: data.email || "",
                     phone: data.phone || "",
                     cpf: data.cpf || "",
@@ -40,6 +57,17 @@ export default function EditPatientPage() {
                     neighborhood: data.neighborhood || "",
                     city: data.city || "",
                     state: data.state || "",
+                    responsibleFullName: guardian?.fullName || "",
+                    responsiblePhone: guardian?.phone || "",
+                    responsibleEmail: guardian?.email || "",
+                    responsibleCpf: guardian?.cpf || "",
+                    responsibleZipCode: guardian?.zipCode || "",
+                    responsibleStreet: guardian?.street || "",
+                    responsibleNumber: guardian?.number || "",
+                    responsibleComplement: guardian?.complement || "",
+                    responsibleNeighborhood: guardian?.neighborhood || "",
+                    responsibleCity: guardian?.city || "",
+                    responsibleState: guardian?.state || "",
                     paymentCycle: String(data.paymentCycle ?? 1),
                     paymentDay: data.paymentDay != null ? String(data.paymentDay) : "",
                     defaultSessionValue: data.defaultSessionValue ? String(data.defaultSessionValue) : "",
@@ -53,25 +81,98 @@ export default function EditPatientPage() {
         if (id) loadPatient();
     }, [id]);
 
+    const fetchCep = async (cep: string, isResponsible: boolean) => {
+        const clean = cep.replace(/\D/g, "");
+        if (clean.length !== 8) return;
+        isResponsible ? setCepResLoading(true) : setCepLoading(true);
+        try {
+            const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+            const data = await res.json();
+            if (!data.erro) {
+                if (isResponsible) {
+                    setFormData(prev => ({
+                        ...prev,
+                        responsibleStreet: data.logradouro || prev.responsibleStreet,
+                        responsibleNeighborhood: data.bairro || prev.responsibleNeighborhood,
+                        responsibleCity: data.localidade || prev.responsibleCity,
+                        responsibleState: data.uf || prev.responsibleState,
+                    }));
+                } else {
+                    setFormData(prev => ({
+                        ...prev,
+                        street: data.logradouro || prev.street,
+                        neighborhood: data.bairro || prev.neighborhood,
+                        city: data.localidade || prev.city,
+                        state: data.uf || prev.state,
+                    }));
+                }
+            }
+        } catch {}
+        finally { isResponsible ? setCepResLoading(false) : setCepLoading(false); }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         setError("");
         try {
+            let guardianId: string | null = originalGuardianId;
+            let removeGuardian = false;
+
+            if (hasResponsible) {
+                // Valores crus (sem "|| null"): no PUT o backend trata null como
+                // "não alterar", então string vazia é o que permite limpar um campo.
+                const guardianPayload = {
+                    fullName: formData.responsibleFullName,
+                    phone: formData.responsiblePhone,
+                    email: formData.responsibleEmail,
+                    cpf: formData.responsibleCpf,
+                    zipCode: formData.responsibleZipCode,
+                    street: formData.responsibleStreet,
+                    number: formData.responsibleNumber,
+                    complement: formData.responsibleComplement,
+                    neighborhood: formData.responsibleNeighborhood,
+                    city: formData.responsibleCity,
+                    state: formData.responsibleState,
+                };
+
+                if (originalGuardianId) {
+                    await apiFetch(`/guardians/${originalGuardianId}`, {
+                        method: "PUT",
+                        body: JSON.stringify(guardianPayload),
+                    });
+                } else {
+                    // No POST, campos vazios viram null (mesmo formato do cadastro de paciente)
+                    const created = await apiFetch("/guardians", {
+                        method: "POST",
+                        body: JSON.stringify(
+                            Object.fromEntries(Object.entries(guardianPayload).map(([k, v]) => [k, v || null]))
+                        ),
+                    });
+                    guardianId = created.id;
+                }
+            } else if (originalGuardianId) {
+                guardianId = null;
+                removeGuardian = true;
+            }
+
             await apiFetch(`/patients/${id}`, {
                 method: "PUT",
                 body: JSON.stringify({
-                    fullName: formData.fullName || null,
-                    email: formData.email || null,
-                    phone: formData.phone || null,
-                    cpf: formData.cpf || null,
-                    zipCode: formData.zipCode || null,
-                    street: formData.street || null,
-                    number: formData.number || null,
-                    complement: formData.complement || null,
-                    neighborhood: formData.neighborhood || null,
-                    city: formData.city || null,
-                    state: formData.state || null,
+                    fullName: formData.fullName,
+                    birthDate: formData.birthDate || null,
+                    email: formData.email,
+                    phone: formData.phone,
+                    cpf: formData.cpf,
+                    zipCode: formData.zipCode,
+                    street: formData.street,
+                    number: formData.number,
+                    complement: formData.complement,
+                    neighborhood: formData.neighborhood,
+                    city: formData.city,
+                    state: formData.state,
+                    guardianId,
+                    removeGuardian,
                     paymentCycle: Number(formData.paymentCycle),
                     paymentDay: formData.paymentDay ? Number(formData.paymentDay) : null,
                     defaultSessionValue: formData.defaultSessionValue ? parseFloat(formData.defaultSessionValue) : null,
@@ -84,32 +185,11 @@ export default function EditPatientPage() {
         }
     };
 
-    const [cepLoading, setCepLoading] = useState(false);
-
-    const fetchCep = async (cep: string) => {
-        const clean = cep.replace(/\D/g, "");
-        if (clean.length !== 8) return;
-        setCepLoading(true);
-        try {
-            const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
-            const data = await res.json();
-            if (!data.erro) {
-                setFormData(prev => ({
-                    ...prev,
-                    street: data.logradouro || prev.street,
-                    neighborhood: data.bairro || prev.neighborhood,
-                    city: data.localidade || prev.city,
-                    state: data.uf || prev.state,
-                }));
-            }
-        } catch {}
-        finally { setCepLoading(false); }
-    };
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        if (name === "zipCode") fetchCep(value);
+        if (name === "zipCode") fetchCep(value, false);
+        if (name === "responsibleZipCode") fetchCep(value, true);
     };
 
     if (loading) return (
@@ -121,6 +201,7 @@ export default function EditPatientPage() {
     return (
         <div className="flex min-h-screen bg-sage-50 dark:bg-zinc-950">
             <Sidebar />
+
             <main className="ml-64 flex-1 p-8">
                 <header className="mb-10 flex items-center gap-6">
                     <Link href={`/patients/${id}`} className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-sage-200 text-sage-500 hover:bg-sage-100 dark:bg-zinc-900 dark:border-zinc-800 transition-all shadow-sm">
@@ -140,7 +221,7 @@ export default function EditPatientPage() {
 
                 <form onSubmit={handleSubmit} className="mx-auto max-w-4xl space-y-8">
 
-                    {/* Dados Pessoais */}
+                    {/* SEÇÃO 1 - Dados Pessoais */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-8 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
@@ -148,9 +229,13 @@ export default function EditPatientPage() {
                             </div>
                             <h3 className="text-xl font-bold text-sage-700 dark:text-white">Dados Pessoais</h3>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <InputGroup label="Nome Completo *" icon={<User size={18} />}>
-                                <input type="text" required name="fullName" value={formData.fullName} onChange={handleInputChange} className="wellness-input" />
+                                <input type="text" required name="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="Ex: Maria Santos" className="wellness-input" />
+                            </InputGroup>
+                            <InputGroup label="Data de Nascimento *" icon={<CalendarIcon size={18} />}>
+                                <input type="date" required name="birthDate" value={formData.birthDate} onChange={handleInputChange} className="wellness-input" />
                             </InputGroup>
                             <InputGroup label="CPF" icon={<User size={18} />}>
                                 <input type="text" name="cpf" value={formData.cpf} onChange={handleInputChange} placeholder="000.000.000-00" className="wellness-input" />
@@ -159,54 +244,57 @@ export default function EditPatientPage() {
                                 <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(11) 99999-9999" className="wellness-input" />
                             </InputGroup>
                             <InputGroup label="Email" icon={<Mail size={18} />}>
-                                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="email@exemplo.com" className="wellness-input" />
+                                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="maria@exemplo.com" className="wellness-input" />
                             </InputGroup>
                         </div>
                     </section>
 
-                    {/* Endereço */}
-                    <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
-                        <div className="mb-8 flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
-                                <MapPin size={20} />
+                    {/* SEÇÃO 2 - Endereço do Paciente (só aparece se NÃO tem responsável) */}
+                    {!hasResponsible && (
+                        <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
+                            <div className="mb-8 flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
+                                    <MapPin size={20} />
+                                </div>
+                                <h3 className="text-xl font-bold text-sage-700 dark:text-white">Endereço</h3>
                             </div>
-                            <h3 className="text-xl font-bold text-sage-700 dark:text-white">Endereço</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <InputGroup label="CEP" icon={cepLoading ? <Loader2 size={18} className="animate-spin text-brand-primary" /> : <Search size={18} />}>
-                                <input type="text" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="00000-000" maxLength={9} className="wellness-input" />
-                            </InputGroup>
-                            <InputGroup label="Cidade" icon={<MapPin size={18} />}>
-                                <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="São Paulo" className="wellness-input" />
-                            </InputGroup>
-                            <InputGroup label="Rua / Logradouro" icon={<MapPin size={18} />}>
-                                <input type="text" name="street" value={formData.street} onChange={handleInputChange} placeholder="Rua das Flores" className="wellness-input" />
-                            </InputGroup>
-                            <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Número" icon={<MapPin size={18} />}>
-                                    <input type="text" name="number" value={formData.number} onChange={handleInputChange} placeholder="123" className="wellness-input" />
-                                </InputGroup>
-                                <InputGroup label="UF" icon={<MapPin size={18} />}>
-                                    <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="SP" maxLength={2} className="wellness-input" />
-                                </InputGroup>
-                            </div>
-                            <InputGroup label="Bairro" icon={<MapPin size={18} />}>
-                                <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleInputChange} placeholder="Centro" className="wellness-input" />
-                            </InputGroup>
-                            <InputGroup label="Complemento" icon={<MapPin size={18} />}>
-                                <input type="text" name="complement" value={formData.complement} onChange={handleInputChange} placeholder="Apto 42, Bloco B" className="wellness-input" />
-                            </InputGroup>
-                        </div>
-                    </section>
 
-                    {/* Ciclo de Pagamento */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <InputGroup label="CEP" icon={cepLoading ? <Loader2 size={18} className="animate-spin text-brand-primary" /> : <Search size={18} />}>
+                                    <input type="text" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="00000-000" maxLength={9} className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Cidade" icon={<MapPin size={18} />}>
+                                    <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="São Paulo" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Rua / Logradouro" icon={<MapPin size={18} />}>
+                                    <input type="text" name="street" value={formData.street} onChange={handleInputChange} placeholder="Rua das Flores" className="wellness-input" />
+                                </InputGroup>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputGroup label="Número" icon={<MapPin size={18} />}>
+                                        <input type="text" name="number" value={formData.number} onChange={handleInputChange} placeholder="123" className="wellness-input" />
+                                    </InputGroup>
+                                    <InputGroup label="UF" icon={<MapPin size={18} />}>
+                                        <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="SP" maxLength={2} className="wellness-input" />
+                                    </InputGroup>
+                                </div>
+                                <InputGroup label="Bairro" icon={<MapPin size={18} />}>
+                                    <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleInputChange} placeholder="Centro" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Complemento" icon={<MapPin size={18} />}>
+                                    <input type="text" name="complement" value={formData.complement} onChange={handleInputChange} placeholder="Apto 42, Bloco B" className="wellness-input" />
+                                </InputGroup>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* SEÇÃO - Ciclo de Pagamento */}
                     <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
                         <div className="mb-8 flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
-                                <DollarSign size={20} />
+                                <Activity size={20} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-sage-700 dark:text-white">Pagamento</h3>
+                                <h3 className="text-xl font-bold text-sage-700 dark:text-white">Ciclo de Pagamento</h3>
                                 <p className="text-xs text-sage-400 mt-1 italic">Como esse paciente costuma pagar.</p>
                             </div>
                         </div>
@@ -225,7 +313,18 @@ export default function EditPatientPage() {
                                     icon={<Activity size={18} />}
                                 />
                             </div>
-
+                            <InputGroup label="Valor Padrão por Sessão (R$)" icon={<DollarSign size={18} />}>
+                                <input
+                                    type="number"
+                                    name="defaultSessionValue"
+                                    step="0.01"
+                                    min="0"
+                                    value={formData.defaultSessionValue}
+                                    onChange={handleInputChange}
+                                    placeholder="Ex: 150,00"
+                                    className="wellness-input"
+                                />
+                            </InputGroup>
                             {formData.paymentCycle !== "1" && (
                                 <div className="space-y-2">
                                     <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">
@@ -236,24 +335,78 @@ export default function EditPatientPage() {
                                         onChange={(value) => setFormData(prev => ({ ...prev, paymentDay: value }))}
                                         options={paymentDayOptions(formData.paymentCycle)}
                                         placeholder="Selecione o dia"
-                                        icon={<Calendar size={18} />}
+                                        icon={<CalendarIcon size={18} />}
                                     />
                                 </div>
                             )}
-
-                            <InputGroup label="Valor Padrão por Sessão (R$)" icon={<DollarSign size={18} />}>
-                                <input
-                                    type="number"
-                                    name="defaultSessionValue"
-                                    value={formData.defaultSessionValue}
-                                    onChange={handleInputChange}
-                                    placeholder="150,00"
-                                    step="0.01"
-                                    min="0"
-                                    className="wellness-input"
-                                />
-                            </InputGroup>
                         </div>
+                    </section>
+
+                    {/* SEÇÃO 3 - Responsável Legal */}
+                    <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
+                        <div className="mb-8 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand-primary dark:bg-brand-primary/10">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-sage-700 dark:text-white">Responsável Legal</h3>
+                                    <p className="text-xs text-sage-400 mt-1 italic">Obrigatório para menores de 18 anos.</p>
+                                </div>
+                            </div>
+                            <label className="relative inline-flex cursor-pointer items-center">
+                                <input type="checkbox" className="sr-only peer" checked={hasResponsible} onChange={() => setHasResponsible(!hasResponsible)} />
+                                <div className="h-7 w-12 rounded-full bg-sage-200 peer-checked:bg-brand-primary transition-all after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[20px] after:w-[20px] after:transition-all peer-checked:after:translate-x-5"></div>
+                                <span className="ml-3 text-sm font-bold text-sage-600 dark:text-zinc-500">Possui Responsável?</span>
+                            </label>
+                        </div>
+
+                        {hasResponsible ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <InputGroup label="Nome do Responsável *" icon={<User size={18} />}>
+                                    <input type="text" required name="responsibleFullName" value={formData.responsibleFullName} onChange={handleInputChange} placeholder="Nome completo" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Telefone *" icon={<Phone size={18} />}>
+                                    <input type="tel" required name="responsiblePhone" value={formData.responsiblePhone} onChange={handleInputChange} placeholder="(11) 99999-9999" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="CPF" icon={<User size={18} />}>
+                                    <input type="text" name="responsibleCpf" value={formData.responsibleCpf} onChange={handleInputChange} placeholder="000.000.000-00" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Email" icon={<Mail size={18} />}>
+                                    <input type="email" name="responsibleEmail" value={formData.responsibleEmail} onChange={handleInputChange} placeholder="responsavel@exemplo.com" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="CEP *" icon={cepResLoading ? <Loader2 size={18} className="animate-spin text-brand-primary" /> : <Search size={18} />}>
+                                    <input type="text" required name="responsibleZipCode" value={formData.responsibleZipCode} onChange={handleInputChange} placeholder="00000-000" maxLength={9} className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Rua / Logradouro" icon={<MapPin size={18} />}>
+                                    <input type="text" name="responsibleStreet" value={formData.responsibleStreet} onChange={handleInputChange} placeholder="Rua das Flores" className="wellness-input" />
+                                </InputGroup>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputGroup label="Número" icon={<MapPin size={18} />}>
+                                        <input type="text" name="responsibleNumber" value={formData.responsibleNumber} onChange={handleInputChange} placeholder="123" className="wellness-input" />
+                                    </InputGroup>
+                                    <InputGroup label="UF" icon={<MapPin size={18} />}>
+                                        <input type="text" name="responsibleState" value={formData.responsibleState} onChange={handleInputChange} placeholder="SP" maxLength={2} className="wellness-input" />
+                                    </InputGroup>
+                                </div>
+                                <InputGroup label="Bairro" icon={<MapPin size={18} />}>
+                                    <input type="text" name="responsibleNeighborhood" value={formData.responsibleNeighborhood} onChange={handleInputChange} placeholder="Centro" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Complemento" icon={<MapPin size={18} />}>
+                                    <input type="text" name="responsibleComplement" value={formData.responsibleComplement} onChange={handleInputChange} placeholder="Apto 42" className="wellness-input" />
+                                </InputGroup>
+                                <InputGroup label="Cidade" icon={<MapPin size={18} />}>
+                                    <input type="text" name="responsibleCity" value={formData.responsibleCity} onChange={handleInputChange} placeholder="São Paulo" className="wellness-input" />
+                                </InputGroup>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-10 text-center rounded-2xl border-2 border-dashed border-sage-100 dark:border-zinc-800">
+                                <Activity size={48} className="text-sage-100 dark:text-zinc-800 mb-4" />
+                                <p className="max-w-xs text-sm text-sage-400 dark:text-zinc-600 font-medium leading-relaxed">
+                                    Paciente adulto - sem necessidade de responsável.
+                                </p>
+                            </div>
+                        )}
                     </section>
 
                     <footer className="flex justify-end gap-4">
@@ -269,9 +422,25 @@ export default function EditPatientPage() {
             </main>
 
             <style jsx global>{`
-                .wellness-input { width: 100%; border-radius: 1.25rem; border: 1px solid #e4e9e5; background-color: #fdfdfc; padding: 1rem 1rem 1rem 3rem; font-size: 0.875rem; transition: all 0.3s; outline: none; }
-                .dark .wellness-input { border-color: #2c3530; background-color: #1a201d; color: white; }
-                .wellness-input:focus { border-color: #14b8a6; box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.05); }
+                .wellness-input {
+                    width: 100%;
+                    border-radius: 1.25rem;
+                    border: 1px solid #e4e9e5;
+                    background-color: #fdfdfc;
+                    padding: 1rem 1rem 1rem 3rem;
+                    font-size: 0.875rem;
+                    transition: all 0.3s;
+                    outline: none;
+                }
+                .dark .wellness-input {
+                    border-color: #2c3530;
+                    background-color: #1a201d;
+                    color: white;
+                }
+                .wellness-input:focus {
+                    border-color: #14b8a6;
+                    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.05);
+                }
             `}</style>
         </div>
     );
@@ -280,7 +449,7 @@ export default function EditPatientPage() {
 function InputGroup({ label, icon, children }: any) {
     return (
         <div className="space-y-2">
-            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">{label}</label>
+            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">{label}</label>
             <div className="relative">
                 {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">{icon}</div>}
                 {children}
