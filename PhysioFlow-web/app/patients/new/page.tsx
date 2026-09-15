@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/Sidebar";
 import { ArrowLeft, User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Save, Loader2, MapPin, Activity, Search, DollarSign } from "lucide-react";
 import { CustomSelect } from "@/components/CustomSelect";
+import { CpfInput } from "@/components/CpfInput";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -162,7 +163,7 @@ export default function NewPatientPage() {
                                 <input type="date" required name="birthDate" value={formData.birthDate} onChange={handleInputChange} className="wellness-input" />
                             </InputGroup>
                             <InputGroup label="CPF" icon={<User size={18} />}>
-                                <input type="text" name="cpf" value={formData.cpf} onChange={handleInputChange} placeholder="000.000.000-00" className="wellness-input" />
+                                <CpfInput name="cpf" value={formData.cpf} onChange={handleInputChange} />
                             </InputGroup>
                             <InputGroup label="Telefone" icon={<Phone size={18} />}>
                                 <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(11) 99999-9999" className="wellness-input" />
@@ -296,7 +297,7 @@ export default function NewPatientPage() {
                                     <input type="tel" required name="responsiblePhone" value={formData.responsiblePhone} onChange={handleInputChange} placeholder="(11) 99999-9999" className="wellness-input" />
                                 </InputGroup>
                                 <InputGroup label="CPF" icon={<User size={18} />}>
-                                    <input type="text" name="responsibleCpf" value={formData.responsibleCpf} onChange={handleInputChange} placeholder="000.000.000-00" className="wellness-input" />
+                                    <CpfInput name="responsibleCpf" value={formData.responsibleCpf} onChange={handleInputChange} />
                                 </InputGroup>
                                 <InputGroup label="Email" icon={<Mail size={18} />}>
                                     <input type="email" name="responsibleEmail" value={formData.responsibleEmail} onChange={handleInputChange} placeholder="responsavel@exemplo.com" className="wellness-input" />
