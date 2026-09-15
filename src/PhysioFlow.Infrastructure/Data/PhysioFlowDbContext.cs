@@ -52,7 +52,11 @@ public class PhysioFlowDbContext : DbContext
         modelBuilder.Entity<Patient>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Cpf).IsUnique();
+
+            // Único POR fisioterapeuta, não globalmente: a mesma pessoa pode ser
+            // paciente de duas profissionais diferentes. O índice global antigo
+            // fazia o banco recusar o que a aplicação permitia, gerando erro 500.
+            e.HasIndex(x => new { x.PhysioId, x.Cpf }).IsUnique();
             e.Property(x => x.FullName).IsRequired().HasMaxLength(200);
             e.Property(x => x.Cpf).HasMaxLength(14);
             e.Property(x => x.Phone).HasMaxLength(20);

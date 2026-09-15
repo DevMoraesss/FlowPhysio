@@ -5,6 +5,7 @@ using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
 using PhysioFlow.Domain.Enums;
+using PhysioFlow.Domain.Validation;
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -49,12 +50,15 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
 {
     var physioId = GetCurrentUserId();
 
-    // Validação 1 — CPF duplicado (dentro dos pacientes deste fisioterapeuta)
-    var normalizedCpf = NormalizeCpf(request.Cpf);
+    // Validação 1 — CPF válido e não duplicado (entre os pacientes deste fisioterapeuta)
+    if (!Cpf.IsValid(request.Cpf))
+        return BadRequest(new { message = "CPF inválido" });
+
+    var normalizedCpf = Cpf.Normalize(request.Cpf);
     if (normalizedCpf != null)
     {
         var existing = await _patientRepository.GetAllByPhysioAsync(physioId);
-        if (existing.Any(p => NormalizeCpf(p.Cpf) == normalizedCpf))
+        if (existing.Any(p => Cpf.Normalize(p.Cpf) == normalizedCpf))
             return BadRequest(new { message = "Já existe um paciente com este CPF" });
     }
 
@@ -110,11 +114,23 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
             return NotFound();
 
 
+        // CPF válido e não duplicado — mesma regra do cadastro, ignorando o próprio paciente
+        if (!Cpf.IsValid(request.Cpf))
+            return BadRequest(new { message = "CPF inválido" });
+
+        var normalizedCpf = Cpf.Normalize(request.Cpf);
+        if (normalizedCpf != null && normalizedCpf != patient.Cpf)
+        {
+            var existing = await _patientRepository.GetAllByPhysioAsync(physioId);
+            if (existing.Any(p => p.Id != id && Cpf.Normalize(p.Cpf) == normalizedCpf))
+                return BadRequest(new { message = "Já existe um paciente com este CPF" });
+        }
+
         if (request.FullName != null) patient.FullName = request.FullName;
         if (request.BirthDate != null) patient.BirthDate = request.BirthDate.Value;
         if (request.Phone != null) patient.Phone = request.Phone;
         if (request.Email != null) patient.Email = request.Email;
-        if (request.Cpf != null) patient.Cpf = NormalizeCpf(request.Cpf);
+        if (request.Cpf != null) patient.Cpf = normalizedCpf;
         if (request.ZipCode != null) patient.ZipCode = request.ZipCode;
         if (request.Street != null) patient.Street = request.Street;
         if (request.Number != null) patient.Number = request.Number;
@@ -220,8 +236,6 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         return age;
     }
 
-    private static string? NormalizeCpf(string? cpf) =>
-        string.IsNullOrWhiteSpace(cpf) ? null : new string(cpf.Where(char.IsDigit).ToArray());
 
     // Mensal/Quinzenal: dia do mês (1-31); Semanal: dia da semana (1=segunda ... 7=domingo)
     private static string? ValidatePaymentDay(PaymentCycle cycle, int? day)
