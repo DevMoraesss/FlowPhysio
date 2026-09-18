@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
+import { FieldLabelText } from "@/components/FieldLabel";
 import { ArrowLeft, ClipboardList, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -91,7 +92,7 @@ export default function NewEvolutionPage() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Formata "2026-03-26T14:00:00Z" → "26/03/2026 às 14:00"
+    // Formata "2026-03-26T14:00:00Z" -> "26/03/2026 às 14:00"
     const formatDateTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleString("pt-BR", {
             day: "2-digit", month: "2-digit", year: "numeric",
@@ -161,7 +162,7 @@ export default function NewEvolutionPage() {
                                 {/* Qual sessão */}
                                 <div className="space-y-2">
                                     <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">
-                                        Sessão Realizada
+                                        <FieldLabelText label="Sessão Realizada *" />
                                     </label>
                                     <select
                                         name="appointmentId"
@@ -182,7 +183,7 @@ export default function NewEvolutionPage() {
                                 {/* Procedimentos */}
                                 <div className="space-y-2">
                                     <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">
-                                        Procedimentos Realizados *
+                                        <FieldLabelText label="Procedimentos Realizados *" />
                                     </label>
                                     <textarea
                                         name="proceduresPerformed"
@@ -245,7 +246,7 @@ export default function NewEvolutionPage() {
                                 {/* Anotações clínicas */}
                                 <div className="space-y-2">
                                     <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">
-                                        Anotações Clínicas *
+                                        <FieldLabelText label="Anotações Clínicas *" />
                                     </label>
                                     <textarea
                                         name="clinicalNotes"

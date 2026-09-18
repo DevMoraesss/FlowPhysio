@@ -1,7 +1,8 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowLeft, User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Save, Loader2, MapPin, Activity, Search, DollarSign } from "lucide-react";
+import { FieldLabelText } from "@/components/FieldLabel";
+import { ArrowLeft, User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Save, Loader2, MapPin, Activity, Search, DollarSign, Info } from "lucide-react";
 import { CustomSelect } from "@/components/CustomSelect";
 import { CpfInput } from "@/components/CpfInput";
 import Link from "next/link";
@@ -165,13 +166,29 @@ export default function NewPatientPage() {
                             <InputGroup label="CPF" icon={<User size={18} />}>
                                 <CpfInput name="cpf" value={formData.cpf} onChange={handleInputChange} />
                             </InputGroup>
-                            <InputGroup label="Telefone" icon={<Phone size={18} />}>
-                                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(11) 99999-9999" className="wellness-input" />
-                            </InputGroup>
-                            <InputGroup label="Email" icon={<Mail size={18} />}>
-                                <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="maria@exemplo.com" className="wellness-input" />
-                            </InputGroup>
+                            {/* Contato do próprio paciente só aparece quando ele NÃO tem
+                                responsável. Com responsável, quem é contatado é o responsável -
+                                pedir os dois gera duplicidade e confunde na hora de ligar.
+                                Mesma lógica já usada no endereço, logo abaixo. */}
+                            {!hasResponsible && (
+                                <>
+                                    <InputGroup label="Telefone" icon={<Phone size={18} />}>
+                                        <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(11) 99999-9999" className="wellness-input" />
+                                    </InputGroup>
+                                    <InputGroup label="Email" icon={<Mail size={18} />}>
+                                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="maria@exemplo.com" className="wellness-input" />
+                                    </InputGroup>
+                                </>
+                            )}
                         </div>
+
+                        {hasResponsible && (
+                            <p className="mt-6 flex items-start gap-2 rounded-xl bg-sage-50 px-4 py-3 text-xs leading-relaxed text-sage-500 dark:bg-zinc-900/40 dark:text-zinc-400">
+                                <Info size={14} className="mt-0.5 shrink-0 text-sage-400" />
+                                Telefone, email e endereço são preenchidos na seção do
+                                responsável legal, mais abaixo.
+                            </p>
+                        )}
                     </section>
 
                     {/* SEÇÃO 2 - Endereço do Paciente (só aparece se NÃO tem responsável) */}
@@ -376,7 +393,7 @@ export default function NewPatientPage() {
 function InputGroup({ label, icon, children }: any) {
     return (
         <div className="space-y-2">
-            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">{label}</label>
+            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500"><FieldLabelText label={label} /></label>
             <div className="relative">
                 {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">{icon}</div>}
                 {children}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
+import { FieldLabelText } from "@/components/FieldLabel";
 import { ArrowLeft, ClipboardList, Save, Loader2, Lock } from "lucide-react";
 import { CustomSelect } from "@/components/CustomSelect";
 import Link from "next/link";
@@ -70,17 +71,12 @@ export default function NewAssessmentPage() {
             );
             setLastAssessment(sorted[0] ?? null);
             setHasInitial(assessmentsData.some((a: any) => a.type === 1));
-            const age = Math.floor(
-                (Date.now() - new Date(patientData.birthDate + "T12:00:00").getTime()) /
-                (365.25 * 24 * 60 * 60 * 1000)
-            );
-            if (age < 18) setAssessmentModel("neuro-infantil");
+            const age = calcAge(patientData.birthDate);
+            if (age !== null && age < 18) setAssessmentModel("neuro-infantil");
         }).catch(() => {}).finally(() => setLoadingCheck(false));
     }, [id]);
 
-    const patientAge = patient
-        ? Math.floor((Date.now() - new Date(patient.birthDate + "T12:00:00").getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-        : null;
+    const patientAge = patient ? calcAge(patient.birthDate) : null;
 
     const isMinor = patientAge !== null && patientAge < 18;
 
@@ -165,7 +161,7 @@ export default function NewAssessmentPage() {
                     <div>
                         <h1 className="text-3xl font-bold text-sage-700 dark:text-white font-serif">Nova Anamnese</h1>
                         <p className="text-sage-500 dark:text-zinc-500 mt-1">
-                            {patient ? `${patient.fullName} · ${patientAge} anos` : "Registre a avaliação clínica do paciente."}
+                            {patient ? `${patient.fullName} - ${patientAge} anos` : "Registre a avaliação clínica do paciente."}
                         </p>
                     </div>
                 </header>
@@ -219,7 +215,7 @@ export default function NewAssessmentPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className={lbl}>Data da Avaliação</label>
+                                <label className={lbl}><FieldLabelText label="Data da Avaliação *" /></label>
                                 <input type="date" required value={assessmentDate}
                                     onChange={e => setAssessmentDate(e.target.value)} className={inp} />
                             </div>
@@ -375,7 +371,7 @@ function NeuroAdultoForm({ answers, onChange }: any) {
                         <F label="Alimentação"><input name="avdAlimentacao" value={answers.avdAlimentacao} onChange={onChange} placeholder="Ex: Independente, com auxílio..." className={inp} /></F>
                         <F label="Banho"><input name="avdBanho" value={answers.avdBanho} onChange={onChange} placeholder="Ex: Dependente parcial..." className={inp} /></F>
                         <F label="Vestuário"><input name="avdVestuario" value={answers.avdVestuario} onChange={onChange} placeholder="Ex: Necessita de auxílio..." className={inp} /></F>
-                        <F label="Transferências"><input name="avdTransferencias" value={answers.avdTransferencias} onChange={onChange} placeholder="Ex: Leito→cadeira com cuidador..." className={inp} /></F>
+                        <F label="Transferências"><input name="avdTransferencias" value={answers.avdTransferencias} onChange={onChange} placeholder="Ex: Leito->cadeira com cuidador..." className={inp} /></F>
                     </div>
                 </div>
                 <F label="Comunicação / Cognição">
@@ -514,7 +510,7 @@ function RespiratorioForm({ answers, onChange }: any) {
                                 <option value="produtiva-purulenta">Produtiva purulenta</option>
                             </select>
                         </F>
-                        <F label="Dispneia (Escala MRC 0–4)">
+                        <F label="Dispneia (Escala MRC 0-4)">
                             <select name="dispneiaMRC" value={answers.dispneiaMRC} onChange={onChange} className={sel}>
                                 <option value="0">0 - Só ao exercício intenso</option>
                                 <option value="1">1 - Ao subir ladeira ou andar rápido</option>
@@ -545,10 +541,22 @@ function SectionHead({ title }: { title: string }) {
 function F({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="space-y-2">
-            <label className={lbl}>{label}</label>
+            <label className={lbl}><FieldLabelText label={label} /></label>
             {children}
         </div>
     );
+}
+
+/**
+ * Idade em anos, ou null quando não há data de nascimento - que é o caso do
+ * pré-cadastro criado pela agenda. O backend já bloqueia avaliação nesse
+ * estado, mas a tela não pode quebrar nem tratar "sem data" como adulto.
+ */
+function calcAge(birthDate?: string | null): number | null {
+    if (!birthDate) return null;
+    const ms = Date.now() - new Date(`${birthDate}T12:00:00`).getTime();
+    if (Number.isNaN(ms)) return null;
+    return Math.floor(ms / (365.25 * 24 * 60 * 60 * 1000));
 }
 
 const lbl = "ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500";

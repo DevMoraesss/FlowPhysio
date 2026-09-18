@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
+import { FieldLabelText } from "@/components/FieldLabel";
 import { CpfInput } from "@/components/CpfInput";
 import { User, Mail, Phone, FileText, Save, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -203,7 +204,7 @@ export default function SettingsPage() {
 function Field({ label, icon, children }: any) {
     return (
         <div className="space-y-2">
-            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">{label}</label>
+            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500"><FieldLabelText label={label} /></label>
             <div className="relative">
                 {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">{icon}</div>}
                 {children}

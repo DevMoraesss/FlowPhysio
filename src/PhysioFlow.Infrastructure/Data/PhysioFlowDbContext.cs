@@ -64,6 +64,7 @@ public class PhysioFlowDbContext : DbContext
             e.Property(x => x.ZipCode).HasMaxLength(10);
             e.Property(x => x.State).HasMaxLength(2);
             e.Property(x => x.DefaultSessionValue).HasColumnType("decimal(10,2)");
+            e.HasIndex(x => new { x.PhysioId, x.Phone });
 
             e.HasOne(x => x.Physio)
                 .WithMany(u => u.Patients)
@@ -124,7 +125,7 @@ public class PhysioFlowDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Evolution — relação 1:1 com Appointment
+        // Evolution - relação 1:1 com Appointment
         modelBuilder.Entity<Evolution>(e =>
         {
             e.HasKey(x => x.Id);

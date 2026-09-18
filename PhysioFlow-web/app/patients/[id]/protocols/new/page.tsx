@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
+import { FieldLabelText } from "@/components/FieldLabel";
 import { ArrowLeft, Activity, Hash, RefreshCw, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -81,7 +82,7 @@ export default function NewProtocolPage() {
                         {/* Nome do tratamento */}
                         <div className="mb-8 space-y-2">
                             <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">
-                                Nome do Protocolo / Tratamento *
+                                <FieldLabelText label="Nome do Protocolo / Tratamento *" />
                             </label>
                             <div className="relative">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
@@ -103,7 +104,7 @@ export default function NewProtocolPage() {
                         <div className="mb-8 grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">
-                                    Total de Ciclos *
+                                    <FieldLabelText label="Total de Ciclos *" />
                                 </label>
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
@@ -124,7 +125,7 @@ export default function NewProtocolPage() {
 
                             <div className="space-y-2">
                                 <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-500 dark:text-zinc-500">
-                                    Sessões por Ciclo *
+                                    <FieldLabelText label="Sessões por Ciclo *" />
                                 </label>
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">

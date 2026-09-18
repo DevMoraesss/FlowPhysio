@@ -82,6 +82,12 @@ public class EvolutionsController : ControllerBase
         if (appointment.Status != AppointmentStatus.Completed)
             return BadRequest(new { message = "Só é possível registrar evolução para sessões concluídas" });
 
+        // Pré-cadastro pode ser agendado e atendido, mas a evolução é documento
+        // clínico: exige o cadastro completo do paciente.
+        var patient = await _patientRepository.GetByIdAsync(appointment.PatientId);
+        if (patient is { CanReceiveClinicalRecords: false })
+            return BadRequest(new { message = "Complete o cadastro do paciente antes de registrar a evolução" });
+
         var existing = await _evolutionRepository.GetByAppointmentAsync(request.AppointmentId);
         if (existing != null)
             return BadRequest(new { message = "Já existe uma evolução para este agendamento" });
