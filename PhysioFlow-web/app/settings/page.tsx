@@ -1,6 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
+import { CpfInput } from "@/components/CpfInput";
 import { User, Mail, Phone, FileText, Save, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -163,12 +164,7 @@ export default function SettingsPage() {
                             </Field>
 
                             <Field label="CPF" icon={<FileText size={18} />}>
-                                <input
-                                    type="text" name="cpf"
-                                    value={formData.cpf} onChange={handleChange}
-                                    placeholder="000.000.000-00"
-                                    className="wellness-input"
-                                />
+                                <CpfInput name="cpf" value={formData.cpf} onChange={handleChange} />
                             </Field>
 
                             <Field label="CREFITO" icon={<FileText size={18} />}>

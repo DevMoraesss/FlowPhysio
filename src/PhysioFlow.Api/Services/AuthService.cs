@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Validation;
 
 namespace PhysioFlow.Api.Services;
 
@@ -48,13 +49,24 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("Email já cadastrado");
         }
 
+        if (!Cpf.IsValid(request.Cpf))
+        {
+            throw new InvalidOperationException("CPF inválido");
+        }
+
+        var normalizedCpf = Cpf.Normalize(request.Cpf);
+        if (normalizedCpf != null && await _userRepository.GetByCpfAsync(normalizedCpf) != null)
+        {
+            throw new InvalidOperationException("CPF já cadastrado");
+        }
+
         var user = new User
         {
             FullName = request.FullName,
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Phone = request.Phone,
-            Cpf = request.Cpf,
+            Cpf = normalizedCpf,
             Crefito = request.Crefito
         };
 

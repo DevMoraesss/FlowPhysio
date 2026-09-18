@@ -15,4 +15,9 @@ public class UserRepository : Repository<User>, IUserRepository
     {
         return await _dbSet.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
     }
+
+    public async Task<User?> GetByCpfAsync(string cpf)
+    {
+        return await _dbSet.FirstOrDefaultAsync(u => u.Cpf == cpf);
+    }
 }

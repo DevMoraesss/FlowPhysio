@@ -32,4 +32,11 @@ public class GuardianRepository : Repository<Guardian>, IGuardianRepository
             .Where(g => g.Id == guardianId)
             .AnyAsync(g => g.Patients.Any(p => p.PhysioId == physioId));
     }
+
+    // Busca global (não filtra por fisioterapeuta) porque o índice único de CPF
+    // em Guardians também é global — a checagem tem que enxergar o mesmo que o banco.
+    public async Task<Guardian?> GetByCpfAsync(string cpf)
+    {
+        return await _dbSet.FirstOrDefaultAsync(g => g.Cpf == cpf);
+    }
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Validation;
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -42,9 +43,21 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound();
 
+        // CPF válido e não duplicado — ignorando o próprio usuário
+        if (!Cpf.IsValid(request.Cpf))
+            return BadRequest(new { message = "CPF inválido" });
+
+        var normalizedCpf = Cpf.Normalize(request.Cpf);
+        if (normalizedCpf != null && normalizedCpf != user.Cpf)
+        {
+            var duplicate = await _userRepository.GetByCpfAsync(normalizedCpf);
+            if (duplicate != null && duplicate.Id != userId)
+                return BadRequest(new { message = "Já existe um cadastro com este CPF" });
+        }
+
         if (request.FullName != null) user.FullName = request.FullName;
         if (request.Phone != null) user.Phone = request.Phone;
-        if (request.Cpf != null) user.Cpf = request.Cpf;
+        if (request.Cpf != null) user.Cpf = normalizedCpf;
         if (request.Crefito != null) user.Crefito = request.Crefito;
 
         await _userRepository.UpdateAsync(user);

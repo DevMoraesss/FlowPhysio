@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Validation;
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -45,10 +46,17 @@ public class GuardiansController : ControllerBase
     [ProducesResponseType(typeof(GuardianResponse), StatusCodes.Status201Created)]
     public async Task<ActionResult<GuardianResponse>> Create([FromBody] CreateGuardianRequest request)
     {
+        if (!Cpf.IsValid(request.Cpf))
+            return BadRequest(new { message = "CPF inválido" });
+
+        var normalizedCpf = Cpf.Normalize(request.Cpf);
+        if (normalizedCpf != null && await _guardianRepository.GetByCpfAsync(normalizedCpf) != null)
+            return BadRequest(new { message = "Já existe um responsável cadastrado com este CPF" });
+
         var guardian = new Guardian
         {
             FullName = request.FullName,
-            Cpf = request.Cpf,
+            Cpf = normalizedCpf,
             Phone = request.Phone,
             Email = request.Email,
             ZipCode = request.ZipCode,
@@ -76,8 +84,20 @@ public class GuardiansController : ControllerBase
         var guardian = await _guardianRepository.GetByIdAsync(id);
         if (guardian == null) return NotFound();
 
+        // CPF válido e não duplicado — ignorando o próprio responsável
+        if (!Cpf.IsValid(request.Cpf))
+            return BadRequest(new { message = "CPF inválido" });
+
+        var normalizedCpf = Cpf.Normalize(request.Cpf);
+        if (normalizedCpf != null && normalizedCpf != guardian.Cpf)
+        {
+            var duplicate = await _guardianRepository.GetByCpfAsync(normalizedCpf);
+            if (duplicate != null && duplicate.Id != id)
+                return BadRequest(new { message = "Já existe um responsável cadastrado com este CPF" });
+        }
+
         if (request.FullName != null) guardian.FullName = request.FullName;
-        if (request.Cpf != null) guardian.Cpf = request.Cpf;
+        if (request.Cpf != null) guardian.Cpf = normalizedCpf;
         if (request.Phone != null) guardian.Phone = request.Phone;
         if (request.Email != null) guardian.Email = request.Email;
         if (request.ZipCode != null) guardian.ZipCode = request.ZipCode;
