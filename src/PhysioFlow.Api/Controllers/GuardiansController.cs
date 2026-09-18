@@ -84,7 +84,7 @@ public class GuardiansController : ControllerBase
         var guardian = await _guardianRepository.GetByIdAsync(id);
         if (guardian == null) return NotFound();
 
-        // CPF válido e não duplicado — ignorando o próprio responsável
+        // CPF válido e não duplicado - ignorando o próprio responsável
         if (!Cpf.IsValid(request.Cpf))
             return BadRequest(new { message = "CPF inválido" });
 

@@ -29,7 +29,7 @@ public class Protocol : BaseEntity
         {
             if (CurrentCycle >= TotalCycles)
             {
-                // Último ciclo concluído → encerra o protocolo
+                // Último ciclo concluído -> encerra o protocolo
                 // (CompletedSessions fica em SessionsPerCycle para indicar 100%)
                 IsActive = false;
             }

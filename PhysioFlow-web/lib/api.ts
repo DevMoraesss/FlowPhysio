@@ -29,7 +29,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     }
     clearTimeout(timeoutId);
 
-    // Token expirado ou inválido → redireciona para login
+    // Token expirado ou inválido -> redireciona para login
     if (response.status === 401) {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('physioflow_token');

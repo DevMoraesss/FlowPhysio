@@ -140,7 +140,7 @@ export default function DashboardPage() {
                                                         {appt.patientName ?? "Paciente"}
                                                     </p>
                                                     <p className="text-xs text-sage-400">
-                                                        {formatTime(appt.startDateTime)} – {formatTime(appt.endDateTime)}
+                                                        {formatTime(appt.startDateTime)} - {formatTime(appt.endDateTime)}
                                                     </p>
                                                 </div>
                                             </div>

@@ -5,7 +5,7 @@ namespace PhysioFlow.Domain.Validation;
 ///
 /// Antes desta classe, cada controller tratava CPF de um jeito: o de paciente
 /// limpava a máscara, o de responsável e o de usuário gravavam o texto cru. O
-/// resultado era que o índice único do banco não funcionava — "123.456.789-00"
+/// resultado era que o índice único do banco não funcionava - "123.456.789-00"
 /// e "12345678900" são textos diferentes para o PostgreSQL, então a mesma
 /// pessoa podia ser cadastrada duas vezes.
 ///
@@ -18,7 +18,7 @@ public static class Cpf
 
     /// <summary>
     /// Remove tudo que não for dígito. Devolve null quando não sobra nada,
-    /// para que "campo não preenchido" seja sempre null no banco — e não
+    /// para que "campo não preenchido" seja sempre null no banco - e não
     /// uma string vazia, que o índice único trataria como um valor real.
     /// </summary>
     public static string? Normalize(string? cpf)
@@ -32,7 +32,7 @@ public static class Cpf
     /// <summary>
     /// Valida o CPF pelo algoritmo oficial dos dígitos verificadores.
     /// Aceita com ou sem máscara. Null/vazio é considerado válido porque
-    /// CPF é opcional no cadastro — quem exige preenchimento é o controller.
+    /// CPF é opcional no cadastro - quem exige preenchimento é o controller.
     /// </summary>
     public static bool IsValid(string? cpf)
     {

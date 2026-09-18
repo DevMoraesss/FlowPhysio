@@ -18,7 +18,7 @@ interface CpfInputProps {
  * Comportamento pensado para não atrapalhar quem está digitando:
  *   - a máscara é aplicada a cada tecla;
  *   - o erro só aparece quando a pessoa SAI do campo (onBlur), nunca no meio
- *     da digitação — senão ela veria "CPF inválido" já no primeiro dígito;
+ *     da digitação - senão ela veria "CPF inválido" já no primeiro dígito;
  *   - depois que apareceu, o erro some sozinho assim que o CPF fica válido.
  *
  * Não substitui a validação do backend: aqui é conforto, lá é garantia.
@@ -62,7 +62,7 @@ export function CpfInput({
             />
             {isInvalid && (
                 <p id={`${name}-erro`} className="ml-2 mt-1.5 text-xs font-medium text-red-500">
-                    CPF inválido — confira os números
+                    CPF inválido - confira os números
                 </p>
             )}
         </>

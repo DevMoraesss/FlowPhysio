@@ -1,7 +1,7 @@
 /**
  * Regras de CPF no frontend.
  *
- * ATENÇÃO — este arquivo é um ESPELHO de src/PhysioFlow.Domain/Validation/Cpf.cs.
+ * ATENÇÃO - este arquivo é um ESPELHO de src/PhysioFlow.Domain/Validation/Cpf.cs.
  * A mesma regra existe nos dois lados de propósito, e cada lado tem um papel:
  *
  *   - Aqui (navegador): avisar a fisioterapeuta na hora, sem esperar o servidor.
@@ -9,23 +9,23 @@
  *   - Lá (backend): impedir que dado inválido entre no banco.
  *     É a GARANTIA. Nunca remover de lá.
  *
- * Duplicar regra normalmente é um problema — mas o algoritmo do CPF é padrão
+ * Duplicar regra normalmente é um problema - mas o algoritmo do CPF é padrão
  * público fixo da Receita Federal, que não muda. O risco das duas cópias
  * divergirem é praticamente zero. Se um dia mudar, mude nos dois.
  */
 
 const LENGTH = 11;
 
-/** Só os dígitos. "529.982.247-25" → "52998224725" */
+/** Só os dígitos. "529.982.247-25" -> "52998224725" */
 export function normalizeCpf(value: string): string {
     return (value ?? "").replace(/\D/g, "");
 }
 
 /**
  * Aplica a máscara enquanto a pessoa digita, de forma progressiva:
- * "529"        → "529"
- * "529982"     → "529.982"
- * "52998224725"→ "529.982.247-25"
+ * "529"        -> "529"
+ * "529982"     -> "529.982"
+ * "52998224725"-> "529.982.247-25"
  *
  * Corta em 11 dígitos, então não adianta digitar mais.
  */

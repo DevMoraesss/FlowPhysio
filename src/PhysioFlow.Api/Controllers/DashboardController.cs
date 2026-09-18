@@ -48,7 +48,7 @@ public class DashboardController : ControllerBase
             {
                 Id = a.Id,
                 PatientId = a.PatientId,
-                PatientName = a.Patient?.FullName,   // ← linha nova
+                PatientName = a.Patient?.FullName,   // <- linha nova
                 PhysioId = a.PhysioId,
                 ProtocolId = a.ProtocolId,
                 StartDateTime = a.StartDateTime,
@@ -77,7 +77,7 @@ public class DashboardController : ControllerBase
         var response = noShows.Select(a => new NoShowPatientResponse
         {
             PatientId = a.PatientId,
-            PatientName = a.Patient?.FullName ?? "—",
+            PatientName = a.Patient?.FullName ?? "-",
             LastNoShowDate = a.StartDateTime
         });
 

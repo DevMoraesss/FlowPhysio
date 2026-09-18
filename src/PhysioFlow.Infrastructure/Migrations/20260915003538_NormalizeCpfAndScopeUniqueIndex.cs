@@ -20,7 +20,7 @@ namespace PhysioFlow.Infrastructure.Migrations
             // sobre dados consistentes.
 
             // 1a. String vazia vira null. O índice único trata '' como um valor real,
-            //     então duas linhas com '' colidiriam — mas "não informado" deve ser null.
+            //     então duas linhas com '' colidiriam - mas "não informado" deve ser null.
             migrationBuilder.Sql(@"
                 UPDATE ""Patients""  SET ""Cpf"" = NULL WHERE btrim(""Cpf"") = '';
                 UPDATE ""Guardians"" SET ""Cpf"" = NULL WHERE btrim(""Cpf"") = '';
@@ -32,7 +32,7 @@ namespace PhysioFlow.Infrastructure.Migrations
             //     O NOT EXISTS é a trava de segurança: só normaliza a linha se NENHUMA
             //     outra linha da tabela terminar com o mesmo CPF normalizado. Se duas
             //     linhas fossem virar o mesmo valor, as DUAS são puladas e continuam
-            //     com a máscara — assim a migration nunca viola o índice único e nunca
+            //     com a máscara - assim a migration nunca viola o índice único e nunca
             //     derruba o deploy. As linhas puladas ficam para resolução manual.
             //
             //     Em Patients a comparação é feita dentro do mesmo PhysioId, porque é
@@ -83,7 +83,7 @@ namespace PhysioFlow.Infrastructure.Migrations
             // ── Parte 2: trocar o escopo do índice único de paciente ────────────
             // Era único no mundo inteiro; passa a ser único por fisioterapeuta.
             // Motivo: a mesma pessoa pode ser paciente de duas profissionais, e a
-            // aplicação já validava por fisioterapeuta — o banco é que discordava,
+            // aplicação já validava por fisioterapeuta - o banco é que discordava,
             // devolvendo erro 500 em vez de uma mensagem clara.
             migrationBuilder.DropIndex(
                 name: "IX_Patients_Cpf",

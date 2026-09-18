@@ -72,7 +72,7 @@ public class AppointmentsController : ControllerBase
             .Select(g => new PendingPaymentResponse
             {
                 PatientId = g.Key,
-                PatientName = g.First().Patient?.FullName ?? "—",
+                PatientName = g.First().Patient?.FullName ?? "-",
                 PaymentCycle = (int)(g.First().Patient?.PaymentCycle ?? PhysioFlow.Domain.Enums.PaymentCycle.PerSession),
                 PaymentDay = g.First().Patient?.PaymentDay,
                 PendingSessions = g.Count(),
@@ -210,7 +210,7 @@ public class AppointmentsController : ControllerBase
         await _appointmentRepository.UpdateAsync(appointment);
 
         // Sincroniza o progresso do protocolo com a transição de status:
-        // virou Completed → registra sessão; deixou de ser Completed → desfaz sessão
+        // virou Completed -> registra sessão; deixou de ser Completed -> desfaz sessão
         bool justCompleted = previousStatus != AppointmentStatus.Completed
                              && appointment.Status == AppointmentStatus.Completed;
         bool justReverted = previousStatus == AppointmentStatus.Completed
