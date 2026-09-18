@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/Sidebar";
 import { Dialog } from "@/components/Dialog";
+import { DraftBadge } from "@/components/DraftBadge";
 import { Search, Plus, Filter, MoreHorizontal, Phone, Mail, User as UserIcon, ClipboardList, Pencil, UserX } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -136,11 +137,15 @@ function PatientCard({ patient, onInactivate }: { patient: any; onInactivate: (i
                     </div>
                     <div className="ml-4">
                         <h4 className="text-lg font-bold text-sage-800 dark:text-white leading-tight">{patient.fullName || "Paciente sem nome"}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-bold uppercase tracking-wider text-sage-400 dark:text-zinc-500">
-                                {calculateAge(patient.birthDate)} anos
-                            </span>
-                            {Number(calculateAge(patient.birthDate)) < 18 ? (
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {patient.isDraft ? (
+                                <DraftBadge size="sm" />
+                            ) : (
+                                <span className="text-xs font-bold uppercase tracking-wider text-sage-400 dark:text-zinc-500">
+                                    {calculateAge(patient.birthDate)} anos
+                                </span>
+                            )}
+                            {!patient.isDraft && Number(calculateAge(patient.birthDate)) < 18 ? (
                                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-500">
                                     MENOR
                                 </span>

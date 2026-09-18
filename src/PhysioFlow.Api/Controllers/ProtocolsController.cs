@@ -68,6 +68,12 @@ public class ProtocolsController : ControllerBase
         if (!await IsOwnedByCurrentUser(request.PatientId))
             return NotFound(new { message = "Paciente não encontrado" });
 
+        // Pré-cadastro pode ser agendado, mas não pode ter plano de tratamento
+        // antes de o cadastro ser completado.
+        var patient = await _patientRepository.GetByIdAsync(request.PatientId);
+        if (patient is { CanReceiveClinicalRecords: false })
+            return BadRequest(new { message = "Complete o cadastro do paciente antes de criar um protocolo" });
+
         var protocol = new Protocol
         {
             PatientId = request.PatientId,

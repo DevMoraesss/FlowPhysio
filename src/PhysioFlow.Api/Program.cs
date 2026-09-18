@@ -111,7 +111,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Rate limiting — máximo 10 tentativas por minuto nos endpoints de auth
+// Rate limiting - máximo 10 tentativas por minuto nos endpoints de auth
 builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("auth", opt =>
@@ -139,7 +139,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Middleware de exceção global — só em produção (em dev queremos ver o erro completo)
+// Middleware de exceção global - só em produção (em dev queremos ver o erro completo)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler(appBuilder =>

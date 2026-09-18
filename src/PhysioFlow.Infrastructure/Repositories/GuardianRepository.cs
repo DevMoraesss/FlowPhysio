@@ -34,7 +34,7 @@ public class GuardianRepository : Repository<Guardian>, IGuardianRepository
     }
 
     // Busca global (não filtra por fisioterapeuta) porque o índice único de CPF
-    // em Guardians também é global — a checagem tem que enxergar o mesmo que o banco.
+    // em Guardians também é global - a checagem tem que enxergar o mesmo que o banco.
     public async Task<Guardian?> GetByCpfAsync(string cpf)
     {
         return await _dbSet.FirstOrDefaultAsync(g => g.Cpf == cpf);

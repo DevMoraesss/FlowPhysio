@@ -52,7 +52,7 @@ function lastDayOfMonth(year: number, monthIndex: number): number {
     return new Date(year, monthIndex + 1, 0).getDate();
 }
 
-// Dias de vencimento do ciclo em um mês, clampados para meses curtos (dia 31 → último dia)
+// Dias de vencimento do ciclo em um mês, clampados para meses curtos (dia 31 -> último dia)
 function dueDaysInMonth(cycle: number, day: number, year: number, monthIndex: number): number[] {
     const last = lastDayOfMonth(year, monthIndex);
     if (cycle === 3) return [Math.min(day, last)];
@@ -80,7 +80,7 @@ export function getDueInfo(
 
     if (cycle === 4) {
         if (day < 1 || day > 7) return null;
-        const jsDow = today.getDay() === 0 ? 7 : today.getDay(); // JS: 0=domingo → 7
+        const jsDow = today.getDay() === 0 ? 7 : today.getDay(); // JS: 0=domingo -> 7
         const daysBack = (jsDow - day + 7) % 7;
         lastDue = new Date(today.getTime() - daysBack * DAY_MS);
         nextDue = new Date(lastDue.getTime() + 7 * DAY_MS);

@@ -174,7 +174,7 @@ export default function ProtocolsPage() {
                                                 )}
                                             </div>
                                             <p className="mt-1 text-sm text-sage-400 dark:text-zinc-500">
-                                                Ciclo {protocol.currentCycle} de {protocol.totalCycles} ·{" "}
+                                                Ciclo {protocol.currentCycle} de {protocol.totalCycles} -{" "}
                                                 {protocol.sessionsPerCycle} sessões por ciclo
                                             </p>
                                         </div>

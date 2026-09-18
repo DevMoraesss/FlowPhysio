@@ -5,13 +5,17 @@ import {
     ArrowLeft, Edit3, Calendar, Plus, FileText,
     User, Phone, Mail, ShieldCheck, TrendingUp, History, Activity,
     UserX, Loader2, MapPin, DollarSign, RefreshCw, CheckCircle, Clock,
-    AlertTriangle, Paperclip, Upload, Download, Trash2
+    AlertTriangle, Paperclip, Upload, Download, Trash2, Lock, ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { formatPaymentDay } from "@/lib/paymentDay";
+import { DraftBadge } from "@/components/DraftBadge";
+
+const BLOQUEIO_PRE_CADASTRO =
+    "Cadastro incompleto: complete os dados do paciente para liberar o prontuário";
 import { Dialog } from "@/components/Dialog";
 
 type DialogState = {
@@ -229,6 +233,7 @@ export default function PatientDetailsPage() {
                                     ? <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-secondary dark:bg-brand-primary/10 dark:text-brand-primary">Ativo</span>
                                     : <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-500">Inativo</span>
                                 }
+                                {patient.isDraft && <DraftBadge />}
                             </div>
                             <p className="text-sage-500 dark:text-zinc-500 mt-1">Prontuário clínico completo</p>
                         </div>
@@ -249,8 +254,33 @@ export default function PatientDetailsPage() {
                     </div>
                 </header>
 
-                {/* Banner de reavaliação pendente */}
-                {needsReassessment && (
+                {/* Pré-cadastro: explica o que está bloqueado e como destravar */}
+                {patient.isDraft && (
+                    <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                        <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-500" />
+                        <div className="flex-1">
+                            <p className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                                Cadastro incompleto - criado pela agenda
+                            </p>
+                            <p className="mt-1 text-xs leading-relaxed text-amber-600 dark:text-amber-500">
+                                Este paciente pode ser agendado, mas ainda não pode receber avaliação,
+                                evolução ou protocolo. Para liberar, falta informar a
+                                <strong> data de nascimento</strong>.
+                            </p>
+                            <Link
+                                href={`/patients/${id}/edit`}
+                                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-sm shadow-amber-500/30 transition-all hover:bg-amber-600"
+                            >
+                                Completar cadastro
+                                <ChevronRight size={14} />
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
+                {/* Banner de reavaliação pendente - não faz sentido enquanto o cadastro
+                    estiver incompleto, porque avaliação está bloqueada de qualquer forma */}
+                {needsReassessment && !patient.isDraft && (
                     <Link
                         href={`/patients/${id}/assessments/new`}
                         className="mb-6 flex items-center gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-5 py-4 hover:bg-amber-100 transition-all dark:bg-amber-950/20 dark:border-amber-900/40 dark:hover:bg-amber-950/30"
@@ -267,7 +297,7 @@ export default function PatientDetailsPage() {
                             </p>
                         </div>
                         <span className="text-xs font-bold text-amber-600 dark:text-amber-400 underline shrink-0">
-                            Avaliar agora →
+                            Avaliar agora
                         </span>
                     </Link>
                 )}
@@ -337,12 +367,22 @@ export default function PatientDetailsPage() {
                             </div>
                         </section>
 
-                        {/* Botão nova anamnese */}
-                        <Link href={`/patients/${id}/assessments/new`}
-                            className="flex items-center justify-center gap-2 rounded-[2rem] border border-sage-200 bg-white p-5 text-sm font-bold text-sage-600 hover:border-brand-primary/30 hover:text-brand-primary dark:bg-zinc-900/40 dark:border-zinc-900 dark:text-zinc-400 transition-all wellness-shadow">
-                            <Plus size={18} />
-                            Nova Anamnese
-                        </Link>
+                        {/* Botão nova anamnese - bloqueado enquanto o cadastro estiver incompleto */}
+                        {patient.isDraft ? (
+                            <div
+                                title={BLOQUEIO_PRE_CADASTRO}
+                                className="flex cursor-not-allowed items-center justify-center gap-2 rounded-[2rem] border border-dashed border-sage-200 bg-sage-50 p-5 text-sm font-bold text-sage-400 dark:border-zinc-800 dark:bg-zinc-900/20 dark:text-zinc-600"
+                            >
+                                <Lock size={16} />
+                                Nova Anamnese
+                            </div>
+                        ) : (
+                            <Link href={`/patients/${id}/assessments/new`}
+                                className="flex items-center justify-center gap-2 rounded-[2rem] border border-sage-200 bg-white p-5 text-sm font-bold text-sage-600 hover:border-brand-primary/30 hover:text-brand-primary dark:bg-zinc-900/40 dark:border-zinc-900 dark:text-zinc-400 transition-all wellness-shadow">
+                                <Plus size={18} />
+                                Nova Anamnese
+                            </Link>
+                        )}
 
                         {/* Responsável */}
                         {patient.guardianId && guardian && (
@@ -413,11 +453,19 @@ export default function PatientDetailsPage() {
                                     <h3 className="text-xl font-bold text-sage-700 dark:text-white font-serif">Histórico de Evoluções</h3>
                                     <p className="text-sage-500 mt-1 text-sm">{evolutions.length} registro(s)</p>
                                 </div>
-                                <Link href={`/patients/${id}/evolutions/new`}
-                                    className="flex items-center gap-2 rounded-2xl bg-brand-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-primary/20 transition-all hover:bg-brand-secondary hover:translate-y-[-2px]">
-                                    <Plus size={18} />
-                                    Nova Evolução
-                                </Link>
+                                {patient.isDraft ? (
+                                    <div title={BLOQUEIO_PRE_CADASTRO}
+                                        className="flex cursor-not-allowed items-center gap-2 rounded-2xl border border-dashed border-sage-200 px-5 py-3 text-sm font-bold text-sage-400 dark:border-zinc-800 dark:text-zinc-600">
+                                        <Lock size={16} />
+                                        Nova Evolução
+                                    </div>
+                                ) : (
+                                    <Link href={`/patients/${id}/evolutions/new`}
+                                        className="flex items-center gap-2 rounded-2xl bg-brand-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-primary/20 transition-all hover:bg-brand-secondary hover:translate-y-[-2px]">
+                                        <Plus size={18} />
+                                        Nova Evolução
+                                    </Link>
+                                )}
                             </div>
 
                             {evolutions.length === 0 ? (
@@ -480,14 +528,22 @@ export default function PatientDetailsPage() {
                                     <h3 className="text-xl font-bold text-sage-700 dark:text-white font-serif">Avaliações e Anamneses</h3>
                                     <p className="text-sage-500 mt-1 text-sm">{assessments.length} registro(s)</p>
                                 </div>
-                                <Link href={`/patients/${id}/assessments/new`}
-                                    className="flex items-center gap-2 rounded-2xl border border-brand-primary/30 px-5 py-3 text-sm font-bold text-brand-primary hover:bg-brand-soft dark:hover:bg-brand-primary/10 transition-all">
-                                    <Plus size={18} />
-                                    Nova Avaliação
-                                </Link>
+                                {patient.isDraft ? (
+                                    <div title={BLOQUEIO_PRE_CADASTRO}
+                                        className="flex cursor-not-allowed items-center gap-2 rounded-2xl border border-dashed border-sage-200 px-5 py-3 text-sm font-bold text-sage-400 dark:border-zinc-800 dark:text-zinc-600">
+                                        <Lock size={16} />
+                                        Nova Avaliação
+                                    </div>
+                                ) : (
+                                    <Link href={`/patients/${id}/assessments/new`}
+                                        className="flex items-center gap-2 rounded-2xl border border-brand-primary/30 px-5 py-3 text-sm font-bold text-brand-primary hover:bg-brand-soft dark:hover:bg-brand-primary/10 transition-all">
+                                        <Plus size={18} />
+                                        Nova Avaliação
+                                    </Link>
+                                )}
                             </div>
 
-                            {needsReassessment && (
+                            {needsReassessment && !patient.isDraft && (
                                 <div className="mb-6 flex items-center gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 dark:bg-amber-950/20 dark:border-amber-900/40">
                                     <AlertTriangle size={16} className="text-amber-500 shrink-0" />
                                     <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
@@ -561,7 +617,7 @@ export default function PatientDetailsPage() {
                                     {inactiveProtocols.map((p: any) => (
                                         <div key={p.id} className="flex items-center justify-between rounded-2xl bg-sage-50 px-5 py-3 dark:bg-zinc-900/40">
                                             <p className="text-sm font-semibold text-sage-500 dark:text-zinc-400">{p.treatmentName}</p>
-                                            <span className="text-xs text-sage-400">{p.totalCycles} ciclo(s) · {p.sessionsPerCycle} sessões/ciclo</span>
+                                            <span className="text-xs text-sage-400">{p.totalCycles} ciclo(s) - {p.sessionsPerCycle} sessões/ciclo</span>
                                         </div>
                                     ))}
                                 </div>
@@ -602,7 +658,7 @@ export default function PatientDetailsPage() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-semibold text-sage-700 dark:text-white truncate">{att.fileName}</p>
-                                                    <p className="text-xs text-sage-400">{att.contentType} · {(att.fileSize / 1024).toFixed(1)} KB</p>
+                                                    <p className="text-xs text-sage-400">{att.contentType} - {(att.fileSize / 1024).toFixed(1)} KB</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0 ml-4">

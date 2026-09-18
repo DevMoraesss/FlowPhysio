@@ -1,8 +1,11 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowLeft, User, Calendar, Clock, DollarSign, FileText, Save, Loader2, Info } from "lucide-react";
+import { FieldLabelText } from "@/components/FieldLabel";
+import { ArrowLeft, User, Calendar, Clock, DollarSign, FileText, Save, Loader2, Info, UserPlus, ChevronRight } from "lucide-react";
 import { CustomSelect } from "@/components/CustomSelect";
+import { QuickPatientForm } from "@/components/QuickPatientForm";
+import { DraftBadge } from "@/components/DraftBadge";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,6 +31,7 @@ function NewAppointmentForm() {
     const [loadingPatient, setLoadingPatient] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [showQuickForm, setShowQuickForm] = useState(false);
 
     const [formData, setFormData] = useState({
         patientId: prefilledPatientId,
@@ -69,6 +73,20 @@ function NewAppointmentForm() {
         } finally {
             setLoadingPatient(false);
         }
+    };
+
+    // Um pré-cadastro recém-criado ainda não está na lista carregada no início,
+    // então ele entra nela na mão antes de ser selecionado.
+    const handleQuickPatientCreated = (patient: any) => {
+        setPatients(prev => [...prev, patient].sort((a, b) => a.fullName.localeCompare(b.fullName)));
+        setShowQuickForm(false);
+        setFormData(prev => ({ ...prev, patientId: patient.id }));
+        setSelectedPatient(patient);
+    };
+
+    const handleSelectExisting = (patientId: string) => {
+        setShowQuickForm(false);
+        handlePatientChange(patientId);
     };
 
     const handleStartTimeChange = (value: string) => {
@@ -143,17 +161,61 @@ function NewAppointmentForm() {
                             <h3 className="text-lg font-bold text-sage-700 dark:text-white">Paciente</h3>
                         </div>
 
-                        <Field label="Selecione o Paciente">
-                            <CustomSelect
-                                value={formData.patientId}
-                                onChange={(value) => handlePatientChange(value)}
-                                options={patients.map(p => ({ value: p.id, label: p.fullName }))}
-                                placeholder={loadingPatients ? "Carregando..." : "Selecione o paciente"}
-                                disabled={loadingPatients}
-                                icon={<User size={18} />}
-                                required
+                        {!showQuickForm && (
+                            <>
+                                <Field label="Paciente já cadastrado *">
+                                    <CustomSelect
+                                        value={formData.patientId}
+                                        onChange={(value) => handlePatientChange(value)}
+                                        options={patients.map(p => ({
+                                            value: p.id,
+                                            label: p.isDraft ? `${p.fullName} - cadastro incompleto` : p.fullName,
+                                        }))}
+                                        placeholder={loadingPatients ? "Carregando..." : "Selecione o paciente"}
+                                        disabled={loadingPatients}
+                                        icon={<User size={18} />}
+                                        required
+                                    />
+                                </Field>
+
+                                {/* Separador: deixa explícito que existem DOIS caminhos,
+                                    em vez de um link discreto que passa despercebido */}
+                                <div className="my-5 flex items-center gap-3">
+                                    <div className="h-px flex-1 bg-sage-200 dark:bg-zinc-800" />
+                                    <span className="text-xs font-bold uppercase tracking-wider text-sage-400 dark:text-zinc-600">
+                                        ou
+                                    </span>
+                                    <div className="h-px flex-1 bg-sage-200 dark:bg-zinc-800" />
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowQuickForm(true)}
+                                    className="group flex w-full items-center gap-3 rounded-2xl border border-brand-primary/40 bg-brand-soft/50 p-4 text-left transition-all hover:border-brand-primary hover:bg-brand-soft dark:border-brand-primary/30 dark:bg-brand-primary/5 dark:hover:bg-brand-primary/10"
+                                >
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary text-white shadow-sm shadow-brand-primary/30">
+                                        <UserPlus size={19} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-bold text-sage-800 dark:text-white">
+                                            Paciente novo, ainda sem cadastro
+                                        </p>
+                                        <p className="mt-0.5 text-xs leading-relaxed text-sage-500 dark:text-zinc-400">
+                                            Marque a consulta só com nome e telefone
+                                        </p>
+                                    </div>
+                                    <ChevronRight size={18} className="shrink-0 text-brand-primary transition-transform group-hover:translate-x-0.5" />
+                                </button>
+                            </>
+                        )}
+
+                        {showQuickForm && (
+                            <QuickPatientForm
+                                onCreated={handleQuickPatientCreated}
+                                onSelectExisting={handleSelectExisting}
+                                onCancel={() => setShowQuickForm(false)}
                             />
-                        </Field>
+                        )}
 
                         {loadingPatient && (
                             <div className="mt-4 flex items-center gap-2 text-xs text-sage-400">
@@ -162,7 +224,25 @@ function NewAppointmentForm() {
                             </div>
                         )}
 
-                        {selectedPatient && !loadingPatient && (
+                        {selectedPatient?.isDraft && !loadingPatient && (
+                            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3.5 dark:border-amber-500/40 dark:bg-amber-500/10">
+                                <DraftBadge size="sm" />
+                                <p className="mt-2 text-xs leading-relaxed text-amber-800 dark:text-amber-400/90">
+                                    Pode marcar a consulta normalmente. Só lembre de completar o
+                                    cadastro até o dia do atendimento, senão não vai dar para
+                                    registrar a evolução da sessão.
+                                </p>
+                                <Link
+                                    href={`/patients/${selectedPatient.id}/edit`}
+                                    className="mt-2.5 inline-flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:hover:bg-amber-500/30"
+                                >
+                                    Completar cadastro agora
+                                    <ChevronRight size={14} />
+                                </Link>
+                            </div>
+                        )}
+
+                        {selectedPatient && !selectedPatient.isDraft && !loadingPatient && (
                             <div className="mt-4 flex items-start gap-3 rounded-2xl bg-brand-soft px-4 py-3 dark:bg-brand-primary/10">
                                 <Info size={16} className="text-brand-primary mt-0.5 shrink-0" />
                                 <div>
@@ -194,7 +274,7 @@ function NewAppointmentForm() {
                         </div>
 
                         <div className="space-y-5">
-                            <Field label="Data">
+                            <Field label="Data *">
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
                                         <Calendar size={18} />
@@ -204,7 +284,7 @@ function NewAppointmentForm() {
                             </Field>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <Field label="Início">
+                                <Field label="Início *">
                                     <div className="relative">
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
                                             <Clock size={18} />
@@ -220,7 +300,7 @@ function NewAppointmentForm() {
                                     </div>
                                 </Field>
 
-                                <Field label="Fim">
+                                <Field label="Fim *">
                                     <div className="relative">
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
                                             <Clock size={18} />
@@ -248,7 +328,7 @@ function NewAppointmentForm() {
                         </div>
 
                         <div className="space-y-5">
-                            <Field label="Valor da Sessão (R$)">
+                            <Field label="Valor da Sessão (R$) *">
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400">
                                         <DollarSign size={18} />
@@ -341,7 +421,7 @@ function calcDuration(start: string, end: string): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="space-y-2">
-            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500">{label}</label>
+            <label className="ml-2 text-xs font-bold uppercase tracking-widest text-sage-400 dark:text-zinc-500"><FieldLabelText label={label} /></label>
             {children}
         </div>
     );

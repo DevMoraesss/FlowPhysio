@@ -50,7 +50,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
 {
     var physioId = GetCurrentUserId();
 
-    // Validação 1 — CPF válido e não duplicado (entre os pacientes deste fisioterapeuta)
+    // Validação 1 - CPF válido e não duplicado (entre os pacientes deste fisioterapeuta)
     if (!Cpf.IsValid(request.Cpf))
         return BadRequest(new { message = "CPF inválido" });
 
@@ -63,11 +63,11 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
     }
 
 
-    // Validação 2 — menor de 18 anos deve ter responsável
+    // Validação 2 - menor de 18 anos deve ter responsável
     if (CalculateAge(request.BirthDate) < 18 && request.GuardianId == null)
         return BadRequest(new { message = "Paciente menor de 18 anos deve ter um responsável legal" });
 
-    // Validação 3 — ciclo válido e dia de pagamento coerente com o ciclo
+    // Validação 3 - ciclo válido e dia de pagamento coerente com o ciclo
     var paymentCycle = (PaymentCycle)request.PaymentCycle;
     if (!Enum.IsDefined(paymentCycle))
         return BadRequest(new { message = "Ciclo de pagamento inválido" });
@@ -102,6 +102,89 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
     return CreatedAtAction(nameof(GetById), new { id = patient.Id }, MapToResponse(patient));
 }
 
+    /// <summary>
+    /// Pré-cadastro: cria um paciente só com nome e telefone, para a
+    /// fisioterapeuta conseguir agendar durante o telefonema.
+    ///
+    /// Regras normais que NÃO se aplicam aqui, e por quê:
+    ///  - data de nascimento: ela não tem no telefonema - é o que trava hoje;
+    ///  - responsável para menor: sem data de nascimento não dá para saber a
+    ///    idade, então a regra só passa a valer quando o cadastro for completado.
+    ///
+    /// Em troca, o paciente nasce como Draft e fica impedido de receber
+    /// avaliação, evolução e protocolo até alguém completar o cadastro.
+    /// </summary>
+    [HttpPost("quick")]
+    [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PatientResponse>> CreateQuick([FromBody] CreateQuickPatientRequest request)
+    {
+        var physioId = GetCurrentUserId();
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            return BadRequest(new { message = "Telefone é obrigatório no pré-cadastro" });
+
+        if (!Cpf.IsValid(request.Cpf))
+            return BadRequest(new { message = "CPF inválido" });
+
+        var normalizedCpf = Cpf.Normalize(request.Cpf);
+        if (normalizedCpf != null)
+        {
+            var existing = await _patientRepository.GetAllByPhysioAsync(physioId);
+            if (existing.Any(p => Cpf.Normalize(p.Cpf) == normalizedCpf))
+                return BadRequest(new { message = "Já existe um paciente com este CPF" });
+        }
+
+        var patient = new Patient
+        {
+            PhysioId = physioId,
+            FullName = request.FullName.Trim(),
+            Phone = request.Phone.Trim(),
+            Cpf = normalizedCpf,
+            RegistrationStatus = RegistrationStatus.Draft,
+        };
+
+        await _patientRepository.AddAsync(patient);
+        return CreatedAtAction(nameof(GetById), new { id = patient.Id }, MapToResponse(patient));
+    }
+
+    /// <summary>
+    /// Busca por nome, telefone ou CPF. Serve para a tela mostrar "já existe
+    /// alguém parecido" ANTES de criar um pré-cadastro - é o que impede a
+    /// mesma paciente de virar três cadastros diferentes ao longo do tempo.
+    /// </summary>
+    [HttpGet("search")]
+    [ProducesResponseType(typeof(IEnumerable<PatientSearchResult>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<PatientSearchResult>>> Search([FromQuery] string? term)
+    {
+        if (string.IsNullOrWhiteSpace(term) || term.Trim().Length < 3)
+            return Ok(Array.Empty<PatientSearchResult>());
+
+        var physioId = GetCurrentUserId();
+        var patients = await _patientRepository.GetAllByPhysioAsync(physioId);
+
+        var raw = term.Trim();
+        var digits = new string(raw.Where(char.IsDigit).ToArray());
+
+        var matches = patients.Where(p =>
+            p.FullName.Contains(raw, StringComparison.OrdinalIgnoreCase)
+            || (digits.Length >= 3 && OnlyDigits(p.Phone).Contains(digits))
+            || (digits.Length >= 3 && (Cpf.Normalize(p.Cpf) ?? "").Contains(digits)));
+
+        return Ok(matches
+            .OrderBy(p => p.FullName)
+            .Take(10)
+            .Select(p => new PatientSearchResult
+            {
+                Id = p.Id,
+                FullName = p.FullName,
+                Phone = p.Phone,
+                Cpf = p.Cpf,
+                BirthDate = p.BirthDate,
+                IsActive = p.IsActive,
+                IsDraft = p.IsDraft,
+            }));
+    }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(PatientResponse), StatusCodes.Status200OK)]
@@ -114,7 +197,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
             return NotFound();
 
 
-        // CPF válido e não duplicado — mesma regra do cadastro, ignorando o próprio paciente
+        // CPF válido e não duplicado - mesma regra do cadastro, ignorando o próprio paciente
         if (!Cpf.IsValid(request.Cpf))
             return BadRequest(new { message = "CPF inválido" });
 
@@ -129,6 +212,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         if (request.FullName != null) patient.FullName = request.FullName;
         if (request.BirthDate != null) patient.BirthDate = request.BirthDate.Value;
         if (request.Phone != null) patient.Phone = request.Phone;
+
         if (request.Email != null) patient.Email = request.Email;
         if (request.Cpf != null) patient.Cpf = normalizedCpf;
         if (request.ZipCode != null) patient.ZipCode = request.ZipCode;
@@ -157,9 +241,16 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         if (paymentDayError != null)
             return BadRequest(new { message = paymentDayError });
 
-        // Menor de 18 anos deve ter responsável legal (mesma regra do cadastro)
-        if (CalculateAge(patient.BirthDate) < 18 && patient.GuardianId == null)
+        // Menor de 18 anos deve ter responsável legal (mesma regra do cadastro).
+        // Só vale quando existe data de nascimento: no pré-cadastro ela ainda é
+        // desconhecida, então não há como aferir a idade.
+        var age = patient.AgeInYears(DateOnly.FromDateTime(DateTime.UtcNow));
+        if (age is < 18 && patient.GuardianId == null)
             return BadRequest(new { message = "Paciente menor de 18 anos deve ter um responsável legal" });
+
+        // Preencher a data de nascimento é o que transforma um pré-cadastro em
+        // cadastro completo - e libera avaliação, evolução e protocolo.
+        patient.CompleteRegistrationIfPossible();
 
         await _patientRepository.UpdateAsync(patient);
         return Ok(MapToResponse(patient));
@@ -225,6 +316,8 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
             PaymentCycle = (int)patient.PaymentCycle,
             PaymentDay = patient.PaymentDay,
             DefaultSessionValue = patient.DefaultSessionValue,
+            RegistrationStatus = (int)patient.RegistrationStatus,
+            IsDraft = patient.IsDraft,
         };
     }
 
@@ -235,6 +328,9 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         if (birthDate.AddYears(age) > today) age--;
         return age;
     }
+
+    private static string OnlyDigits(string? value) =>
+        string.IsNullOrEmpty(value) ? "" : new string(value.Where(char.IsDigit).ToArray());
 
 
     // Mensal/Quinzenal: dia do mês (1-31); Semanal: dia da semana (1=segunda ... 7=domingo)

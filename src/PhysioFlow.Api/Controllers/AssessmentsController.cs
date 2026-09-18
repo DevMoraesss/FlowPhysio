@@ -63,6 +63,12 @@ public class AssessmentsController : ControllerBase
         if (!await IsOwnedByCurrentUser(request.PatientId))
             return NotFound(new { message = "Paciente não encontrado" });
 
+        // Pré-cadastro pode ser agendado, mas não pode receber documento clínico:
+        // prontuário é de guarda obrigatória e exige paciente identificado de verdade.
+        var patient = await _patientRepository.GetByIdAsync(request.PatientId);
+        if (patient is { CanReceiveClinicalRecords: false })
+            return BadRequest(new { message = "Complete o cadastro do paciente antes de registrar uma avaliação" });
+
         var assessmentDateUtc = DateTime.SpecifyKind(request.AssessmentDate, DateTimeKind.Utc);
         var existing = (await _assessmentRepository.GetAllByPatientAsync(request.PatientId)).ToList();
 

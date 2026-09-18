@@ -23,7 +23,7 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
     public async Task<IEnumerable<Appointment>> GetAllByPhysioAsync(Guid physioId)
     {
         return await _dbSet
-            .Include(a => a.Patient)   // ← JOIN com Patient
+            .Include(a => a.Patient)   // <- JOIN com Patient
             .Where(a => a.PhysioId == physioId)
             .OrderByDescending(a => a.StartDateTime)
             .ToListAsync();
@@ -34,8 +34,8 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
         return await _dbSet
             .Include(a => a.Patient)
             .Where(a => a.PhysioId == physioId
-                && a.StartDateTime < end       // ← overlap: início antes do fim do novo
-                && a.EndDateTime > start)      // ← overlap: fim depois do início do novo
+                && a.StartDateTime < end       // <- overlap: início antes do fim do novo
+                && a.EndDateTime > start)      // <- overlap: fim depois do início do novo
             .OrderBy(a => a.StartDateTime)
             .ToListAsync();
     }

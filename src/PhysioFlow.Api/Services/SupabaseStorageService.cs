@@ -32,7 +32,7 @@ public class SupabaseStorageService : IStorageService
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Upload falhou: {response.StatusCode} — {body}");
+            throw new Exception($"Upload falhou: {response.StatusCode} - {body}");
         }
 
         return path;
@@ -67,7 +67,7 @@ public class SupabaseStorageService : IStorageService
         if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.NotFound)
         {
             var responseBody = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Delete falhou: {response.StatusCode} — {responseBody}");
+            throw new Exception($"Delete falhou: {response.StatusCode} - {responseBody}");
         }
     }
 

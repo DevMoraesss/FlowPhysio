@@ -212,7 +212,7 @@ const handleUpdateStatus = async (status: number) => {
                         <div className="mt-8 space-y-3">
                             {selectedEvent.status === 1 && (
                                 <>
-                                    {/* PerSession (1) → exige forma de pagamento */}
+                                    {/* PerSession (1) -> exige forma de pagamento */}
                                     {(!selectedEvent.patientPaymentCycle || selectedEvent.patientPaymentCycle === 1) && (
                                         showCompleteForm ? (
                                             <div className="rounded-2xl bg-sage-50 dark:bg-zinc-800 p-4 space-y-3">
@@ -255,7 +255,7 @@ const handleUpdateStatus = async (status: number) => {
                                         )
                                     )}
 
-                                    {/* Quinzenal / Mensal / Semanal → confirma direto, pagamento fica Pendente */}
+                                    {/* Quinzenal / Mensal / Semanal -> confirma direto, pagamento fica Pendente */}
                                     {selectedEvent.patientPaymentCycle && selectedEvent.patientPaymentCycle !== 1 && (
                                         <div className="space-y-3">
                                             <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 px-4 py-2 text-xs text-amber-600 dark:text-amber-400 text-center">

@@ -43,7 +43,7 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound();
 
-        // CPF válido e não duplicado — ignorando o próprio usuário
+        // CPF válido e não duplicado - ignorando o próprio usuário
         if (!Cpf.IsValid(request.Cpf))
             return BadRequest(new { message = "CPF inválido" });
 

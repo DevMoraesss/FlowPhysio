@@ -200,7 +200,7 @@ export default function PaymentsPage() {
                                                         <p className="text-xs text-sage-400 dark:text-zinc-500">
                                                             {cycleLabel[item.paymentCycle] ?? "-"}
                                                             {formatPaymentDay(item.paymentCycle, item.paymentDay)
-                                                                ? ` · ${formatPaymentDay(item.paymentCycle, item.paymentDay)}`
+                                                                ? ` - ${formatPaymentDay(item.paymentCycle, item.paymentDay)}`
                                                                 : ""}
                                                         </p>
                                                     </div>
@@ -320,7 +320,7 @@ export default function PaymentsPage() {
                                                                     {appt.patientName || "Paciente"}
                                                                 </Link>
                                                                 <p className="text-xs text-sage-400">
-                                                                    {formatDate(appt.startDateTime)} · {formatTime(appt.startDateTime)}
+                                                                    {formatDate(appt.startDateTime)} - {formatTime(appt.startDateTime)}
                                                                 </p>
                                                             </div>
                                                         </div>
