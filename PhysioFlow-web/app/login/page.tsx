@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Activity, Lock, Mail, Loader2 } from "lucide-react";
+import { Lock, Mail, Loader2 } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { apiFetch } from "@/lib/api";
 
 export default function LoginPage() {
@@ -42,9 +43,7 @@ export default function LoginPage() {
 
                 {/* Logo */}
                 <div className="flex flex-col items-center text-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-brand-primary text-white shadow-lg shadow-brand-primary/30">
-                        <Activity size={32} />
-                    </div>
+                    <Logo size={64} className="rounded-[1.5rem]" />
                     <h2 className="mt-6 text-3xl font-bold tracking-tight text-sage-700 font-serif">
                         PhysioFlow
                     </h2>

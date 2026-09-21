@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Brain, User, Mail, Lock, Loader2, Phone } from "lucide-react";
+import { User, Mail, Lock, Loader2, Phone } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { apiFetch } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -38,9 +39,7 @@ export default function RegisterPage() {
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
             <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 backdrop-blur-xl">
                 <div className="flex flex-col items-center text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
-                        <Brain size={28} />
-                    </div>
+                    <Logo size={48} className="rounded-xl" />
                     <h2 className="mt-6 text-3xl font-bold tracking-tight text-white">Criar conta</h2>
                     <p className="mt-2 text-sm text-zinc-400">Junte-se ao PhysioFlow e comece a gerenciar sua clínica</p>
                 </div>

@@ -9,12 +9,12 @@ import {
     ClipboardList,
     LayoutDashboard,
     LogOut,
-    Activity,
     ChevronRight,
     Settings,
     Bell,
     DollarSign
 } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -50,9 +50,7 @@ export function Sidebar() {
         <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-sage-200 bg-white dark:bg-zinc-950 dark:border-zinc-900 transition-all duration-300">
             <div className="flex h-full flex-col px-4 py-6">
                 <div className="mb-10 flex items-center px-2">
-                    <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary text-white shadow-lg shadow-brand-primary/20">
-                        <Activity size={24} />
-                    </div>
+                    <Logo size={40} className="mr-3 rounded-2xl" />
                     <span className="text-xl font-bold tracking-tight text-sage-700 dark:text-white">PhysioFlow</span>
                 </div>
 
