@@ -17,9 +17,25 @@ builder.Services.AddControllers();
 
 // Configure PostgreSQL with EF Core
 // Aceita tanto o formato ADO.NET (Host=...;Port=...) quanto URI (postgresql://...)
-var rawConnString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? "";
+//
+// A string de conexao NAO fica no repositorio. De onde ela vem:
+//   desenvolvimento -> appsettings.Development.json (banco local do Docker)
+//   producao        -> variavel de ambiente ConnectionStrings__DefaultConnection
+//                      ou DATABASE_URL
+//
+// O IsNullOrWhiteSpace e necessario porque appsettings.json define a chave
+// como string vazia. Com o "??" sozinho, vazio nao e nulo e o DATABASE_URL
+// nunca seria usado.
+var rawConnString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(rawConnString))
+    rawConnString = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (string.IsNullOrWhiteSpace(rawConnString))
+{
+    throw new InvalidOperationException(
+        "String de conexao nao configurada. Defina a variavel de ambiente " +
+        "ConnectionStrings__DefaultConnection (dois sublinhados) ou DATABASE_URL.");
+}
 
 if (rawConnString.StartsWith("postgresql://") || rawConnString.StartsWith("postgres://"))
 {
@@ -50,6 +66,26 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IStorageService, SupabaseStorageService>();
 
 // Configure JWT Authentication
+//
+// A chave que assina os tokens NAO fica no repositorio. De onde ela vem:
+//   desenvolvimento -> appsettings.Development.json (chave local, nao protege nada real)
+//   producao        -> variavel de ambiente Jwt__Secret (dois sublinhados)
+//
+// Quem tem a chave fabrica um token valido para qualquer usuario, sem senha.
+// Por isso a aplicacao se recusa a subir sem ela, em vez de subir insegura:
+// falhar no start e barulhento e obvio, subir sem protecao e silencioso.
+//
+// 32 caracteres e o minimo do algoritmo HMAC-SHA256, que assina os tokens.
+const int JwtMinimumSecretLength = 32;
+
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < JwtMinimumSecretLength)
+{
+    throw new InvalidOperationException(
+        $"Jwt:Secret ausente ou curto demais (minimo {JwtMinimumSecretLength} caracteres). " +
+        "Defina a variavel de ambiente Jwt__Secret com dois sublinhados.");
+}
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -65,8 +101,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
     };
 });
 

@@ -281,23 +281,43 @@ Frontend disponível em: `http://localhost:3000`
 
 ## Variáveis de Ambiente
 
-### Backend - `src/PhysioFlow.Api/appsettings.json`
+### Backend
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5433;Database=PhysioFlow_dev;Username=postgres;Password=postgres"
-  },
-  "Jwt": {
-    "Secret": "SuaChaveSecretaComPeloMenos32Caracteres!",
-    "Issuer": "PhysioFlow",
-    "Audience": "PhysioFlowUsers"
-  },
-  "AllowedOrigins": "http://localhost:3000,http://localhost:3001"
-}
-```
+**Nenhum segredo fica no repositório.** O `appsettings.json` versionado traz as
+chaves com valor vazio; quem preenche é o ambiente.
 
-> Para produção, crie `appsettings.Production.json` (já no `.gitignore`) e sobrescreva os valores sensíveis.
+#### Desenvolvimento local
+
+Já vem configurado em `appsettings.Development.json`: banco local do Docker e
+uma chave JWT de desenvolvimento, marcada como tal. Essa chave não protege nada
+real (a API e o banco rodam só na sua máquina) e **nunca** é usada em produção.
+
+Nada a fazer: `dotnet run` funciona direto.
+
+#### Produção
+
+Defina como variáveis de ambiente na plataforma de deploy. O separador é
+**dois sublinhados**, que é como o .NET representa hierarquia de configuração:
+
+| Variável | Para que serve |
+|---|---|
+| `Jwt__Secret` | Chave que assina os tokens. Mínimo 32 caracteres. |
+| `ConnectionStrings__DefaultConnection` | String de conexão do PostgreSQL |
+| `DATABASE_URL` | Alternativa à anterior, no formato URI do Railway |
+| `AllowedOrigins` | Origens liberadas no CORS, separadas por vírgula |
+| `Supabase__Url` e `Supabase__ServiceKey` | Armazenamento de anexos |
+
+> **A aplicação se recusa a subir sem `Jwt__Secret`**, com uma mensagem
+> explicando o que falta. É proposital: falhar no start é barulhento e óbvio,
+> enquanto subir sem proteção seria silencioso. Quem tem a chave consegue
+> fabricar um token válido para qualquer usuário, sem precisar de senha.
+
+#### Trabalho futuro
+
+O ideal seria manter também a chave de desenvolvimento fora do repositório, com
+`dotnet user-secrets`, que guarda os valores no perfil do usuário e não na pasta
+do projeto. Não foi adotado para não criar um passo obrigatório de configuração
+antes de rodar o sistema pela primeira vez.
 
 ### Frontend - `PhysioFlow-web/.env.local`
 
