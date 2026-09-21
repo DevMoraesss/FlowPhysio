@@ -75,7 +75,15 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(User user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]!));
+        // O Program.cs ja recusa subir sem esta chave, entao aqui ela sempre
+        // existe. A checagem fica como rede de seguranca: se alguem um dia
+        // remover a validacao do start, o erro aponta a causa em vez de
+        // estourar um NullReferenceException sem explicacao.
+        var secret = _configuration["Jwt:Secret"];
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new InvalidOperationException("Jwt:Secret nao configurado.");
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
