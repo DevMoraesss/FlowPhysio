@@ -13,10 +13,14 @@ interface LogoProps {
  * A imagem ja vem com o proprio fundo verde, entao nao precisa de caixa
  * colorida atras nem de sombra colorida: o desenho se sustenta sozinho.
  *
+ * O arquivo e PNG e nao JPEG. A logo tem duas cores chapadas, entao o PNG
+ * comprime melhor (9 KB contra 101 KB), nao cria sujeira de compressao nas
+ * bordas curvas e nao carrega o perfil ICC do Photoshop que fazia o otimizador
+ * do Next recusar o arquivo com "isn't a valid image".
+ *
  * `unoptimized` desliga o otimizador de imagem do Next para este arquivo.
- * O otimizador falhava com "isn't a valid image" por causa do perfil de cor
- * ICC embutido no JPEG. Para uma logo estatica de tamanho fixo, otimizar nao
- * traz ganho nenhum, entao servir o arquivo direto e mais simples e resolve.
+ * Para uma logo estatica exibida entre 40 e 64 pixels, otimizar nao traz ganho
+ * nenhum, entao servir o arquivo direto e mais simples.
  *
  * Existir como componente evita o que aconteceu com o CPF: a mesma coisa
  * escrita em tres markups diferentes, que depois divergem. Trocar a logo
@@ -25,7 +29,7 @@ interface LogoProps {
 export function Logo({ size = 40, className = "" }: LogoProps) {
     return (
         <Image
-            src="/logo-physioflow.jpeg"
+            src="/logo-physioflow.png"
             alt="PhysioFlow"
             width={size}
             height={size}

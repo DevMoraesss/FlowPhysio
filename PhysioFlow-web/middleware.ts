@@ -30,11 +30,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
-// Diz ao Next.js em quais rotas o middleware deve rodar
-// O "matcher" abaixo exclui arquivos estáticos (imagens, fontes, etc.)
-// e rotas internas do Next.js (_next/)
+
 export const config = {
     matcher: [
-        "/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$).*)",
+        "/((?!_next|.*\\..*).*)",
     ],
 };
