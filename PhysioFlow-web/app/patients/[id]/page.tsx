@@ -5,12 +5,13 @@ import {
     ArrowLeft, Edit3, Calendar, Plus, FileText,
     User, Phone, Mail, ShieldCheck, TrendingUp, History, Activity,
     UserX, Loader2, MapPin, DollarSign, RefreshCw, CheckCircle, Clock,
-    AlertTriangle, Paperclip, Upload, Download, Trash2, Lock, ChevronRight
+    AlertTriangle, Paperclip, Upload, Download, Trash2, Lock, ChevronRight, Eye
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { AttachmentPreview } from "@/components/AttachmentPreview";
 import { formatPaymentDay } from "@/lib/paymentDay";
 import { DraftBadge } from "@/components/DraftBadge";
 
@@ -39,6 +40,8 @@ export default function PatientDetailsPage() {
     const [guardian, setGuardian] = useState<any>(null);
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
+    // Anexo aberto no visualizador. Null quando nenhum está aberto.
+    const [previewing, setPreviewing] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [inactivating, setInactivating] = useState(false);
@@ -662,11 +665,22 @@ export default function PatientDetailsPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0 ml-4">
+                                                {/* Ação principal, com texto e não só ícone: abrir o
+                                                    exame na tela é o que mais se faz com um anexo, e
+                                                    precisa ser reconhecível sem adivinhação. */}
+                                                <button onClick={() => setPreviewing(att)}
+                                                    title={`Ver ${att.fileName}`}
+                                                    className="flex items-center gap-2 rounded-xl border border-brand-primary/30 bg-brand-soft px-4 py-2 text-sm font-semibold text-brand-secondary hover:bg-brand-primary hover:text-white dark:bg-brand-primary/10 dark:text-brand-primary dark:hover:text-white transition-all">
+                                                    <Eye size={16} />
+                                                    <span className="hidden sm:inline">Ver</span>
+                                                </button>
                                                 <button onClick={() => handleDownload(att.id, att.fileName)}
+                                                    title="Baixar arquivo" aria-label={`Baixar ${att.fileName}`}
                                                     className="flex h-9 w-9 items-center justify-center rounded-xl border border-sage-200 text-sage-500 hover:border-brand-primary/30 hover:text-brand-primary dark:border-zinc-700 transition-all">
                                                     <Download size={16} />
                                                 </button>
                                                 <button onClick={() => handleDeleteAttachment(att.id)}
+                                                    title="Excluir arquivo" aria-label={`Excluir ${att.fileName}`}
                                                     className="flex h-9 w-9 items-center justify-center rounded-xl border border-sage-100 text-sage-400 hover:border-red-200 hover:text-red-500 dark:border-zinc-800 transition-all">
                                                     <Trash2 size={16} />
                                                 </button>
@@ -689,6 +703,15 @@ export default function PatientDetailsPage() {
                     variant={dialog.variant}
                     onConfirm={dialog.onConfirm}
                     onCancel={dialog.onCancel}
+                />
+            )}
+
+            {previewing && (
+                <AttachmentPreview
+                    attachmentId={previewing.id}
+                    fileName={previewing.fileName}
+                    contentType={previewing.contentType}
+                    onClose={() => setPreviewing(null)}
                 />
             )}
         </div>

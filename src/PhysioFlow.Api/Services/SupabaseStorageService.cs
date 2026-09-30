@@ -38,20 +38,15 @@ public class SupabaseStorageService : IStorageService
         return path;
     }
 
-    public async Task<string> GetSignedUrlAsync(string filePath, int expiresInSeconds = 3600)
+    public async Task<Stream> OpenReadAsync(string filePath)
     {
-        var url = $"{_supabaseUrl}/storage/v1/object/sign/{_bucket}/{filePath}";
-        var body = JsonSerializer.Serialize(new { expiresIn = expiresInSeconds });
+        var url = $"{_supabaseUrl}/storage/v1/object/{_bucket}/{filePath}";
 
-        using var content = new StringContent(body, Encoding.UTF8, "application/json");
-        var response = await _http.PostAsync(url, content);
-        response.EnsureSuccessStatusCode();
+        var response = await _http.GetAsync(url);
+        if (!response.IsSuccessStatusCode)
+            throw new FileNotFoundException($"Arquivo não encontrado no Supabase: {filePath}");
 
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-        var signedPath = doc.RootElement.GetProperty("signedURL").GetString()!;
-
-        return $"{_supabaseUrl}{signedPath}";
+        return await response.Content.ReadAsStreamAsync();
     }
 
     public async Task DeleteAsync(string filePath)

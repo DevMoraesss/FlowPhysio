@@ -51,8 +51,20 @@ public class AttachmentsController : ControllerBase
         if (!attachment.PatientId.HasValue || !await IsOwnedByCurrentUser(attachment.PatientId.Value))
             return NotFound();
 
-        var signedUrl = await _storage.GetSignedUrlAsync(attachment.FilePath);
-        return Redirect(signedUrl);
+        Stream stream;
+        try
+        {
+            stream = await _storage.OpenReadAsync(attachment.FilePath);
+        }
+        catch (FileNotFoundException)
+        {
+            // O registro do anexo existe mas o arquivo sumiu do armazenamento.
+            // Para quem chama isso é a mesma coisa que não existir.
+            return NotFound(new { message = "Arquivo não encontrado no armazenamento." });
+        }
+
+        // File() fecha o stream depois de enviar a resposta.
+        return File(stream, attachment.ContentType, attachment.FileName);
     }
 
     [HttpPost]

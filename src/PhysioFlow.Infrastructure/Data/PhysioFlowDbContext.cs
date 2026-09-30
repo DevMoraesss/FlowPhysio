@@ -17,6 +17,7 @@ public class PhysioFlowDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Evolution> Evolutions => Set<Evolution>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<AttachmentContent> AttachmentContents => Set<AttachmentContent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -164,6 +165,18 @@ public class PhysioFlowDbContext : DbContext
                 .WithMany(ev => ev.Attachments)
                 .HasForeignKey(x => x.EvolutionId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // AttachmentContent
+        // Tabela separada da de anexos para que listar anexos não carregue os
+        // bytes dos arquivos junto. Não há chave estrangeira ligando as duas:
+        // o vínculo é a coluna FilePath do anexo, que guarda o Id daqui como
+        // texto. Isso existe porque FilePath precisa continuar servindo também
+        // para o provedor externo, onde a referência é um caminho e não um Id.
+        modelBuilder.Entity<AttachmentContent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Data).IsRequired().HasColumnType("bytea");
         });
     }
 
