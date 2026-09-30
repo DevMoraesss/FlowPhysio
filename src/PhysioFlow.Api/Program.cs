@@ -63,7 +63,26 @@ builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddHttpClient<IStorageService, SupabaseStorageService>();
+
+// Onde os anexos ficam guardados.
+//
+// Esta e a unica linha do sistema que sabe qual provedor esta em uso. O
+// AttachmentsController depende de IStorageService, entao trocar de provedor
+// nao exige tocar em controller, repositorio nem banco.
+//
+// O padrao e Postgres: guarda os arquivos no proprio banco, nao depende de
+// servico externo e portanto funciona em qualquer ambiente. Supabase continua
+// disponivel para quem tiver as credenciais configuradas.
+var storageProvider = builder.Configuration["Storage:Provider"] ?? "Postgres";
+
+if (string.Equals(storageProvider, "Supabase", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHttpClient<IStorageService, SupabaseStorageService>();
+}
+else
+{
+    builder.Services.AddScoped<IStorageService, PostgresStorageService>();
+}
 
 // Configure JWT Authentication
 //
