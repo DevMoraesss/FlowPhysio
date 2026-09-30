@@ -1,0 +1,74 @@
+# Integração contínua do PhysioFlow.
+#
+# Responde a uma pergunta só: esta mudança compila e passa nos testes, numa
+# máquina que não é a de quem escreveu?
+#
+# Não faz deploy. O Railway já publica a partir da main por conta própria, e
+# duplicar isso aqui só criaria duas fontes de verdade sobre o que está no ar.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Se chegarem dois envios seguidos na mesma branch, cancela o anterior: só
+# interessa o resultado do código mais recente.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (.NET 8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar o .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependências
+        run: dotnet restore PhysioFlow.sln
+
+      # --no-restore porque o passo anterior já restaurou. Repetir só gastaria
+      # tempo e poderia baixar versão diferente da que foi restaurada.
+      - name: Compilar
+        run: dotnet build PhysioFlow.sln --configuration Release --no-restore
+
+      - name: Rodar os testes
+        run: dotnet test PhysioFlow.sln --configuration Release --no-build --verbosity normal
+
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: PhysioFlow-web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: PhysioFlow-web/package-lock.json
+
+      # npm ci e não npm install: instala exatamente o que está no
+      # package-lock.json, sem atualizar nada por conta própria. É o que faz o
+      # resultado do CI valer para a máquina de quem programa.
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar tipos
+        run: npx tsc --noEmit
+
+      - name: Compilar
+        run: npm run build
