@@ -306,6 +306,7 @@ Defina como variáveis de ambiente na plataforma de deploy. O separador é
 | `DATABASE_URL` | Alternativa à anterior, no formato URI do Railway |
 | `AllowedOrigins` | Origens liberadas no CORS, separadas por vírgula |
 | `Supabase__Url` e `Supabase__ServiceKey` | Armazenamento de anexos |
+| `Admin__Email` e `Admin__Password` | Primeiro administrador, criado na subida da API se ainda não existir. Senha com 8 caracteres, maiúscula, minúscula e número |
 
 > **A aplicação se recusa a subir sem `Jwt__Secret`**, com uma mensagem
 > explicando o que falta. É proposital: falhar no start é barulhento e óbvio,
@@ -335,13 +336,32 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 
 | Método | Endpoint            | Descrição                    | Auth |
 |--------|---------------------|------------------------------|------|
-| POST   | /api/auth/register  | Criar conta de fisioterapeuta | ❌   |
 | POST   | /api/auth/login     | Login - retorna JWT (24h)    | ❌   |
 
 **Resposta do login:**
 ```json
-{ "accessToken": "eyJ..." }
+{ "accessToken": "eyJ...", "user": { "fullName": "...", "role": "Physiotherapist" } }
 ```
+
+### Contas (perfil Administrador)
+
+As rotas clínicas (pacientes, agenda, prontuário, financeiro) exigem o perfil **Fisioterapeuta**.
+As rotas abaixo exigem o perfil **Administrador**. Perfil errado responde **403**.
+
+| Método | Endpoint                          | Descrição                                  |
+|--------|-----------------------------------|--------------------------------------------|
+| GET    | /api/admin/users                  | Listar as contas                           |
+| POST   | /api/admin/users                  | Criar conta de fisioterapeuta              |
+| PATCH  | /api/admin/users/{id}/deactivate  | Desativar (não vale para a própria conta)  |
+| PATCH  | /api/admin/users/{id}/activate    | Reativar                                   |
+| PUT    | /api/admin/users/{id}/password    | Definir senha provisória                   |
+
+Não existe cadastro público. O primeiro administrador é criado na subida da API a partir de
+`Admin__Email` e `Admin__Password`.
+
+Senha definida pelo administrador (conta nova ou senha redefinida) é **provisória**: até a pessoa
+trocar por uma dela em `PUT /api/users/me/password`, qualquer outra rota responde 403 com
+`"code": "password_change_required"`. Assim o administrador não fica sabendo a senha de uso.
 
 ---
 
@@ -351,6 +371,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 |--------|----------------|-----------------------------------|------|
 | GET    | /api/users/me  | Dados do fisioterapeuta logado    | ✅   |
 | PUT    | /api/users/me  | Atualizar nome, telefone, CPF, CREFITO | ✅ |
+| PUT    | /api/users/me/password | Trocar a própria senha (pede a senha atual) | ✅ |
 
 ---
 
@@ -472,15 +493,21 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 
 ## Exemplos com cURL
 
-### 1. Registrar fisioterapeuta
+### 1. Administrador cria a conta da fisioterapeuta
 
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
+ADMIN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@physioflow.local","password":"Admin2026"}' \
+  | jq -r '.accessToken')
+
+curl -X POST http://localhost:5000/api/admin/users \
+  -H "Authorization: Bearer $ADMIN" \
   -H "Content-Type: application/json" \
   -d '{
     "fullName": "Dra. Priscila Silva",
     "email": "priscila@physioflow.com",
-    "password": "senha123",
+    "password": "Senha1234",
     "phone": "19999999999",
     "crefito": "CREFITO-3/12345-F"
   }'
@@ -491,7 +518,7 @@ curl -X POST http://localhost:5000/api/auth/register \
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"priscila@physioflow.com","password":"senha123"}' \
+  -d '{"email":"priscila@physioflow.com","password":"Senha1234"}' \
   | jq -r '.accessToken')
 ```
 

@@ -190,6 +190,14 @@ export default function SettingsPage() {
                         </button>
                     </footer>
                 </form>
+
+                <section className="mx-auto mt-8 max-w-2xl rounded-md border border-linha bg-superficie p-5">
+                    <h2 className="text-[17px] font-semibold text-tinta">Senha</h2>
+                    <p className="mt-1 text-[15px] text-tinta-2">Para trocar, você vai precisar da senha atual.</p>
+                    <Link href="/change-password" className="mt-3 inline-block text-[15px] font-medium text-acao hover:underline">
+                        Trocar senha
+                    </Link>
+                </section>
             </main>
 
             <style jsx global>{`

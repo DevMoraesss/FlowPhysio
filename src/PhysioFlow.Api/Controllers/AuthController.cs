@@ -33,29 +33,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("register")]
-    [EnableRateLimiting("auth")]
-    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<UserResponse>> Register([FromBody] CreateUserRequest request)
-    {
-        try
-        {
-            var user = await _authService.RegisterAsync(request);
-            return CreatedAtAction(nameof(Register), new UserResponse
-            {
-                Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email,
-                Phone = user.Phone,
-                Cpf = user.Cpf,
-                Crefito = user.Crefito,
-                CreatedAt = user.CreatedAt
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+    // Não existe cadastro público: conta nova só nasce pelo administrador (AdminController).
+    // Antes havia um POST /api/auth/register aberto, e qualquer pessoa na internet criava conta.
 }

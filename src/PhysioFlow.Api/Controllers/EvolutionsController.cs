@@ -10,7 +10,8 @@ namespace PhysioFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+// Só o perfil Fisioterapeuta. O administrador recebe 403 aqui: ele gerencia contas, não vê pacientes
+[Authorize(Roles = nameof(UserRole.Physiotherapist))]
 public class EvolutionsController : ControllerBase
 {
     private readonly IEvolutionRepository _evolutionRepository;

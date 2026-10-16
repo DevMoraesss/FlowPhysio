@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
+using PhysioFlow.Domain.Enums;
 using PhysioFlow.Domain.Interfaces;
 using PhysioFlow.Domain.Validation;
 
@@ -12,7 +13,8 @@ namespace PhysioFlow.Api.Services;
 public interface IAuthService
 {
     Task<AuthResponse> LoginAsync(LoginRequest request);
-    Task<User> RegisterAsync(CreateUserRequest request);
+    Task<User> CreateAccountAsync(CreateUserRequest request, UserRole role, bool mustChangePassword);
+    Task EnsureAdministratorAsync(string email, string password);
 }
 
 public class AuthService : IAuthService
@@ -34,14 +36,25 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Email ou senha inválidos");
         }
 
+        // Só depois de a senha conferir: assim a mensagem não revela, para quem não sabe a
+        // senha, que aquela conta existe.
+        if (!user.IsActive)
+        {
+            throw new UnauthorizedAccessException("Esta conta está desativada. Fale com o administrador do sistema.");
+        }
+
         return new AuthResponse
         {
-            User = MapToUserResponse(user),
+            User = UserResponse.From(user),
             AccessToken = GenerateJwtToken(user)
         };
     }
 
-    public async Task<User> RegisterAsync(CreateUserRequest request)
+    /// <summary>
+    /// Cria uma conta. Não existe mais cadastro público: quem chama é o administrador, pela
+    /// área de contas, ou a subida da API, para o primeiro administrador.
+    /// </summary>
+    public async Task<User> CreateAccountAsync(CreateUserRequest request, UserRole role, bool mustChangePassword)
     {
         var existing = await _userRepository.GetByEmailAsync(request.Email);
         if (existing != null)
@@ -67,10 +80,30 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Phone = request.Phone,
             Cpf = normalizedCpf,
-            Crefito = request.Crefito
+            Crefito = request.Crefito,
+            Role = role,
+            MustChangePassword = mustChangePassword
         };
 
         return await _userRepository.AddAsync(user);
+    }
+
+    /// <summary>
+    /// Garante que exista o administrador configurado em Admin__Email e Admin__Password.
+    /// Roda na subida da API. Se a conta já existe, não mexe nela: nem na senha, nem no perfil.
+    /// Assim trocar a variável de ambiente não muda a senha de ninguém sem aviso.
+    /// </summary>
+    public async Task EnsureAdministratorAsync(string email, string password)
+    {
+        if (await _userRepository.GetByEmailAsync(email) != null)
+            return;
+
+        await CreateAccountAsync(new CreateUserRequest
+        {
+            FullName = "Administrador",
+            Email = email,
+            Password = password
+        }, UserRole.Administrator, mustChangePassword: false);
     }
 
     private string GenerateJwtToken(User user)
@@ -90,7 +123,9 @@ public class AuthService : IAuthService
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.FullName)
+            new Claim(ClaimTypes.Name, user.FullName),
+            // O perfil vai no token. É ele que o [Authorize(Roles = ...)] de cada controller confere
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
         var token = new JwtSecurityToken(
@@ -102,19 +137,5 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private static UserResponse MapToUserResponse(User user)
-    {
-        return new UserResponse
-        {
-            Id = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            Phone = user.Phone,
-            Cpf = user.Cpf,
-            Crefito = user.Crefito,
-            CreatedAt = user.CreatedAt
-        };
     }
 }

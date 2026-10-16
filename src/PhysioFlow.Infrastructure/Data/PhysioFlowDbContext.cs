@@ -35,6 +35,9 @@ public class PhysioFlowDbContext : DbContext
             e.Property(x => x.Phone).HasMaxLength(20);
             e.Property(x => x.Cpf).HasMaxLength(14);
             e.Property(x => x.Crefito).HasMaxLength(20);
+            e.Property(x => x.Role).IsRequired();
+            e.Property(x => x.IsActive).IsRequired();
+            e.Property(x => x.MustChangePassword).IsRequired();
         });
 
         // Guardian

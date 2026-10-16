@@ -1,3 +1,5 @@
+import { clearSession } from './session';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
@@ -29,15 +31,25 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     }
     clearTimeout(timeoutId);
 
-    // Token expirado ou inválido -> redireciona para login
-    if (response.status === 401) {
+    // Token expirado, inválido ou de conta desativada -> volta para o login.
+    // No próprio login, 401 é senha errada ou conta desativada: aí a mensagem da API precisa
+    // chegar à tela. Antes a página só recarregava, sem dizer nada.
+    if (response.status === 401 && !endpoint.startsWith('/auth/')) {
         if (typeof window !== 'undefined') {
-            localStorage.removeItem('physioflow_token');
-            localStorage.removeItem('physioflow_user');
-            document.cookie = 'physioflow_token=; path=/; max-age=0';
+            clearSession();
             window.location.href = '/login';
         }
         throw new Error('Sessão expirada. Faça login novamente.');
+    }
+
+    // 403 tem dois motivos: senha provisória ainda não trocada (a API manda um código) ou perfil
+    // sem acesso, como o administrador numa tela clínica (a API não manda corpo)
+    if (response.status === 403) {
+        const body = await response.json().catch(() => null);
+        if (body?.code === 'password_change_required' && typeof window !== 'undefined') {
+            window.location.href = '/change-password';
+        }
+        throw new Error(body?.message || 'Seu perfil não tem acesso a esta área.');
     }
 
     if (!response.ok) {

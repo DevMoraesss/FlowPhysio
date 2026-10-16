@@ -5,12 +5,14 @@ using PhysioFlow.Api.DTOs;
 using PhysioFlow.Api.Services;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Enums;
 
 namespace PhysioFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+// Só o perfil Fisioterapeuta. O administrador recebe 403 aqui: ele gerencia contas, não vê pacientes
+[Authorize(Roles = nameof(UserRole.Physiotherapist))]
 public class AttachmentsController : ControllerBase
 {
     private readonly IAttachmentRepository _attachmentRepository;

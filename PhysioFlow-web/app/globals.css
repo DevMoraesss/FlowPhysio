@@ -21,6 +21,30 @@
   --color-sage-500: #718377;
   --color-sage-700: #3d4a41;
 
+  /* Sistema visual novo. As telas migram para estes tokens uma a uma; as cores brand e sage
+     acima saem quando a última tela migrar. Contrastes medidos pela WCAG 2.1. */
+  --color-fundo: #f7f8f7;
+  --color-superficie: #ffffff;
+  --color-linha: #dfe5e1;
+  --color-tinta: #1d2721;      /* texto principal, 15,4:1 */
+  --color-tinta-2: #4a574f;    /* texto secundário e rótulo, 7,6:1 */
+  --color-tinta-3: #627167;    /* metadado, o mais claro permitido para texto, 5,2:1 */
+  --color-acao: #036b52;       /* verde da logo escurecido até passar contraste, 6,5:1 com branco */
+  --color-acao-hover: #025542;
+  --color-acao-suave: #e8f3ef;
+
+  /* Situação: só onde existe situação */
+  --color-ok: #05603a;
+  --color-ok-suave: #e6f4ec;
+  --color-info: #1d4ed8;
+  --color-info-suave: #eaf0fd;
+  --color-atencao: #92400e;
+  --color-atencao-suave: #fdf3e1;
+  --color-erro: #b42318;
+  --color-erro-suave: #fdecea;
+  --color-neutra: #4a574f;
+  --color-neutra-suave: #eef1ef;
+
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
   --radius-4xl: 2.5rem;
