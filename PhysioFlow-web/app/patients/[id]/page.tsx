@@ -18,6 +18,7 @@ import { DraftBadge } from "@/components/DraftBadge";
 const BLOQUEIO_PRE_CADASTRO =
     "Cadastro incompleto: complete os dados do paciente para liberar o prontuário";
 import { Dialog } from "@/components/Dialog";
+import { formatCpf } from "@/lib/cpf";
 
 type DialogState = {
     title: string;
@@ -318,7 +319,7 @@ export default function PatientDetailsPage() {
                             </h3>
                             <div className="space-y-4">
                                 <InfoItem icon={<Calendar size={15} />} label="Nascimento" value={formatDate(patient.birthDate)} />
-                                <InfoItem icon={<FileText size={15} />} label="CPF" value={patient.cpf || "Não informado"} />
+                                <InfoItem icon={<FileText size={15} />} label="CPF" value={patient.cpf ? formatCpf(patient.cpf) : "Não informado"} />
                                 <InfoItem icon={<Mail size={15} />} label="Email" value={patient.email || "Não informado"} />
                                 <InfoItem icon={<Phone size={15} />} label="Telefone" value={patient.phone || "Não informado"} />
                             </div>
@@ -398,7 +399,7 @@ export default function PatientDetailsPage() {
                                     <InfoItem icon={<User size={15} />} label="Nome" value={guardian.fullName} />
                                     <InfoItem icon={<Phone size={15} />} label="Telefone" value={guardian.phone} />
                                     {guardian.email && <InfoItem icon={<Mail size={15} />} label="Email" value={guardian.email} />}
-                                    {guardian.cpf && <InfoItem icon={<FileText size={15} />} label="CPF" value={guardian.cpf} />}
+                                    {guardian.cpf && <InfoItem icon={<FileText size={15} />} label="CPF" value={formatCpf(guardian.cpf)} />}
                                     {(guardian.city || guardian.state) && (
                                         <InfoItem icon={<MapPin size={15} />} label="Cidade"
                                             value={[guardian.city, guardian.state].filter(Boolean).join(" - ")} />

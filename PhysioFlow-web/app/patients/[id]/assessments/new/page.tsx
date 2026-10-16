@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { todayLocal } from "@/lib/dates";
 
 export default function NewAssessmentPage() {
     const router = useRouter();
@@ -22,7 +23,7 @@ export default function NewAssessmentPage() {
 
     const [assessmentType, setAssessmentType] = useState("1");
     const [assessmentModel, setAssessmentModel] = useState("ortopedico");
-    const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split("T")[0]);
+    const [assessmentDate, setAssessmentDate] = useState(todayLocal());
     const [generalNotes, setGeneralNotes] = useState("");
 
     const [ortopedicoAnswers, setOrtopedicoAnswers] = useState({
