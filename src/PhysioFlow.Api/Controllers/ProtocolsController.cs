@@ -89,31 +89,6 @@ public class ProtocolsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = protocol.Id }, MapToResponse(protocol));
     }
 
-    [HttpPost("{id:guid}/complete-session")]
-    [ProducesResponseType(typeof(ProtocolResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ProtocolResponse>> CompleteSession(Guid id)
-    {
-        var protocol = await _protocolRepository.GetByIdAsync(id);
-        if (protocol == null)
-            return NotFound();
-
-        if (!await IsOwnedByCurrentUser(protocol.PatientId))
-            return NotFound();
-
-        if (!protocol.IsActive)
-            return BadRequest(new { message = "Protocolo encerrado" });
-
-        if (protocol.CurrentCycle > protocol.TotalCycles)
-            return BadRequest(new { message = "Todos os ciclos já foram concluídos" });
-
-        protocol.RegisterCompletedSession();
-
-        await _protocolRepository.UpdateAsync(protocol);
-        return Ok(MapToResponse(protocol));
-    }
-
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ProtocolResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

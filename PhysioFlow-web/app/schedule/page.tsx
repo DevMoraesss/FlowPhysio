@@ -22,6 +22,16 @@ type DialogState = {
 } | null;
 
 
+// Só os campos do protocolo que o modal da sessão usa
+type ActiveProtocol = {
+    id: string;
+    treatmentName: string;
+    currentCycle: number;
+    totalCycles: number;
+    sessionsPerCycle: number;
+    completedSessions: number;
+};
+
 export default function SchedulePage() {
     const router = useRouter();
     const calendarRef = useRef<FullCalendar>(null);
@@ -31,6 +41,9 @@ export default function SchedulePage() {
     const [updating, setUpdating] = useState(false);
     const [showCompleteForm, setShowCompleteForm] = useState(false);
     const [closePaymentMethod, setClosePaymentMethod] = useState("1");
+    // Protocolos ativos do paciente da sessão aberta: a sessão concluída conta num deles
+    const [activeProtocols, setActiveProtocols] = useState<ActiveProtocol[]>([]);
+    const [closeProtocolId, setCloseProtocolId] = useState("");
     const [dialog, setDialog] = useState<DialogState>(null);
 
 
@@ -41,13 +54,28 @@ export default function SchedulePage() {
     };
 
     const handleEventClick = (clickInfo: any) => {
-        setSelectedEvent({ id: clickInfo.event.id, ...clickInfo.event.extendedProps });
+        const appt = { id: clickInfo.event.id, ...clickInfo.event.extendedProps };
+        setSelectedEvent(appt);
+        setActiveProtocols([]);
+        setCloseProtocolId(appt.protocolId ?? "");
+
+        // Sessão ainda por concluir: busca em qual protocolo ela vai contar
+        if (appt.status === 1) {
+            apiFetch(`/protocols/patient/${appt.patientId}/active`)
+                .then((data: ActiveProtocol[]) => {
+                    setActiveProtocols(data);
+                    if (!appt.protocolId && data.length === 1) setCloseProtocolId(data[0].id);
+                })
+                .catch(() => setActiveProtocols([]));
+        }
     };
 
     const closeModal = () => {
     setSelectedEvent(null);
     setShowCompleteForm(false);
     setClosePaymentMethod("1");
+    setActiveProtocols([]);
+    setCloseProtocolId("");
 };
 
 const handleUpdateStatus = async (status: number) => {
@@ -63,6 +91,7 @@ const handleUpdateStatus = async (status: number) => {
                 // Quinzenal/Mensal/Semanal: sessão concluída, pagamento pendente p/ cobrar depois
                 body.paymentStatus = 1;
             }
+            if (closeProtocolId) body.protocolId = closeProtocolId;
         }
 
         await apiFetch(`/appointments/${selectedEvent.id}`, {
@@ -84,6 +113,9 @@ const handleUpdateStatus = async (status: number) => {
     }
 };
 
+
+    const sessionProtocol = activeProtocols.find(p => p.id === closeProtocolId);
+    const mustChooseProtocol = activeProtocols.length > 1 && !closeProtocolId;
 
     return (
         <div className="flex min-h-screen bg-sage-50 dark:bg-zinc-950">
@@ -202,11 +234,39 @@ const handleUpdateStatus = async (status: number) => {
                                 <div>
                                     <p className="text-xs font-bold uppercase tracking-widest text-sage-400">Valor</p>
                                     <p className="font-medium text-sage-700 dark:text-white">
-                                        R$ {selectedEvent.sessionValue.toFixed(2)}
+                                        R$ {Number(selectedEvent.sessionValue).toFixed(2).replace(".", ",")}
                                     </p>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Em qual protocolo a sessão vai contar */}
+                        {selectedEvent.status === 1 && activeProtocols.length > 0 && (
+                            <div className="mt-6 rounded-md border border-sage-200 px-4 py-3 text-sm text-sage-700">
+                                {activeProtocols.length > 1 && !selectedEvent.protocolId ? (
+                                    <label className="block space-y-1.5">
+                                        <span className="font-medium">Esta sessão conta em qual protocolo?</span>
+                                        <select
+                                            value={closeProtocolId}
+                                            onChange={(e) => setCloseProtocolId(e.target.value)}
+                                            className="w-full rounded-md border border-sage-300 bg-white px-3 py-2 text-base text-sage-800 outline-none focus:border-brand-primary"
+                                        >
+                                            <option value="">Escolha o protocolo</option>
+                                            {activeProtocols.map(p => (
+                                                <option key={p.id} value={p.id}>{p.treatmentName}</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                ) : null}
+                                {sessionProtocol && (
+                                    <p className={activeProtocols.length > 1 && !selectedEvent.protocolId ? "mt-2" : ""}>
+                                        Ao concluir, conta em <strong>{sessionProtocol.treatmentName}</strong>: sessão{" "}
+                                        {sessionProtocol.completedSessions + 1} de {sessionProtocol.sessionsPerCycle}, ciclo{" "}
+                                        {sessionProtocol.currentCycle} de {sessionProtocol.totalCycles}.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Ações por status */}
                         <div className="mt-8 space-y-3">
@@ -236,7 +296,7 @@ const handleUpdateStatus = async (status: number) => {
                                                     </button>
                                                     <button
                                                         onClick={() => handleUpdateStatus(2)}
-                                                        disabled={updating}
+                                                        disabled={updating || mustChooseProtocol}
                                                         className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-green-500 py-2 text-sm font-bold text-white hover:bg-green-600 disabled:opacity-50"
                                                     >
                                                         {updating ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
@@ -263,7 +323,7 @@ const handleUpdateStatus = async (status: number) => {
                                             </div>
                                             <button
                                                 onClick={() => handleUpdateStatus(2)}
-                                                disabled={updating}
+                                                disabled={updating || mustChooseProtocol}
                                                 className="w-full flex items-center justify-center gap-2 rounded-2xl bg-green-500 py-3 text-sm font-bold text-white hover:bg-green-600 disabled:opacity-50 transition-all"
                                             >
                                                 {updating ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}

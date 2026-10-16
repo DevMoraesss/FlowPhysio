@@ -447,7 +447,6 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 | GET    | /api/protocols/{id}                         | Buscar por ID                                | ✅   |
 | POST   | /api/protocols                              | Criar protocolo                              | ✅   |
 | PUT    | /api/protocols/{id}                         | Atualizar protocolo (incluindo isActive)     | ✅   |
-| PATCH  | /api/protocols/{id}/complete-session        | Registrar sessão manualmente (sem agendamento vinculado) | ✅ |
 
 ---
 
