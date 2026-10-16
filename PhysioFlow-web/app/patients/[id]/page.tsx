@@ -412,43 +412,59 @@ export default function PatientDetailsPage() {
                     {/* ── COLUNA DIREITA ── */}
                     <div className="lg:col-span-8 space-y-8">
 
-                        {/* Protocolos ativos */}
-                        {activeProtocols.length > 0 && (
-                            <section className="rounded-[2.5rem] border-2 border-brand-primary/20 bg-white p-8 dark:bg-zinc-900/40">
-                                <h3 className="mb-6 flex items-center gap-2 text-xl font-bold text-sage-700 dark:text-white font-serif">
+                        {/* Protocolos ativos. Sempre aparece: é a única entrada para a tela de protocolos */}
+                        <section className="rounded-[2.5rem] border-2 border-brand-primary/20 bg-white p-8 dark:bg-zinc-900/40">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h3 className="flex items-center gap-2 text-xl font-bold text-sage-700 dark:text-white font-serif">
                                     <Activity size={20} className="text-brand-primary" />
                                     Protocolos Ativos
                                 </h3>
-                                <div className="space-y-4">
-                                    {activeProtocols.map((p: any) => {
-                                        const progress = p.sessionsPerCycle > 0
-                                            ? Math.round((p.completedSessions / p.sessionsPerCycle) * 100)
-                                            : 0;
-                                        return (
-                                            <div key={p.id} className="rounded-2xl bg-brand-soft/50 p-5 dark:bg-brand-primary/5">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <p className="font-bold text-sage-700 dark:text-white">{p.treatmentName}</p>
-                                                    <span className="rounded-full bg-brand-soft px-3 py-0.5 text-xs font-bold text-brand-primary">
-                                                        Ciclo {p.currentCycle}/{p.totalCycles}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex-1 h-2 rounded-full bg-sage-200 dark:bg-zinc-700">
-                                                        <div
-                                                            className="h-2 rounded-full bg-brand-primary transition-all"
-                                                            style={{ width: `${progress}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-xs font-bold text-sage-500 dark:text-zinc-400 shrink-0">
-                                                        {p.completedSessions}/{p.sessionsPerCycle} sessões
-                                                    </span>
-                                                </div>
+                                {!patient.isDraft && (
+                                    <Link href={`/patients/${id}/protocols`} className="text-sm font-bold text-brand-primary hover:underline">
+                                        Ver protocolos
+                                    </Link>
+                                )}
+                            </div>
+                            {patient.isDraft ? (
+                                <p className="text-sm text-sage-600">Complete o cadastro para criar um protocolo.</p>
+                            ) : activeProtocols.length === 0 ? (
+                                <p className="text-sm text-sage-600">
+                                    Nenhum protocolo ativo.{" "}
+                                    <Link href={`/patients/${id}/protocols/new`} className="font-bold text-brand-primary hover:underline">
+                                        Criar protocolo
+                                    </Link>
+                                </p>
+                            ) : (
+                            <div className="space-y-4">
+                                {activeProtocols.map((p: any) => {
+                                    const progress = p.sessionsPerCycle > 0
+                                        ? Math.round((p.completedSessions / p.sessionsPerCycle) * 100)
+                                        : 0;
+                                    return (
+                                        <div key={p.id} className="rounded-2xl bg-brand-soft/50 p-5 dark:bg-brand-primary/5">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <p className="font-bold text-sage-700 dark:text-white">{p.treatmentName}</p>
+                                                <span className="rounded-full bg-brand-soft px-3 py-0.5 text-xs font-bold text-brand-primary">
+                                                    Ciclo {p.currentCycle}/{p.totalCycles}
+                                                </span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-                        )}
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1 h-2 rounded-full bg-sage-200 dark:bg-zinc-700">
+                                                    <div
+                                                        className="h-2 rounded-full bg-brand-primary transition-all"
+                                                        style={{ width: `${progress}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs font-bold text-sage-500 dark:text-zinc-400 shrink-0">
+                                                    {p.completedSessions}/{p.sessionsPerCycle} sessões
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            )}
+                        </section>
 
                         {/* Evoluções */}
                         <section className="rounded-[2.5rem] border border-sage-200 bg-white p-10 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">

@@ -52,6 +52,10 @@ public class UpdateAppointmentRequest
     public decimal? SessionValue { get; set; }
     public bool? RequiresReceipt { get; set; }
     public string? Notes { get; set; }
+
+    // Em qual protocolo a sessão conta, quando o paciente tem mais de um ativo.
+    // Com um só, a API escolhe sozinha e este campo pode ficar vazio.
+    public Guid? ProtocolId { get; set; }
 }
 
 public class PendingPaymentResponse

@@ -1,7 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowLeft, Plus, CheckCircle, XCircle, Activity, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, XCircle, Activity } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -21,7 +21,6 @@ export default function ProtocolsPage() {
     const { id } = useParams(); // id do paciente
     const [protocols, setProtocols] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [completing, setCompleting] = useState<string | null>(null); // id do protocolo sendo atualizado
 
     // e junto com os outros useState:
     const [dialog, setDialog] = useState<DialogState>(null);
@@ -39,30 +38,6 @@ export default function ProtocolsPage() {
             console.error("Erro ao carregar protocolos:", err);
         } finally {
             setLoading(false);
-        }
-    }
-
-    // Chama POST /protocols/{id}/complete-session
-    // Esse endpoint não precisa de body - só o ID na URL
-    async function completeSession(protocolId: string) {
-        setCompleting(protocolId);
-        try {
-            const updated = await apiFetch(`/protocols/${protocolId}/complete-session`, {
-                method: "POST",
-            });
-            // Atualiza o protocolo localmente com os dados retornados
-            setProtocols(prev =>
-                prev.map(p => p.id === protocolId ? updated : p)
-            );
-        } catch (err: any) {
-            setDialog({
-                title: "Erro",
-                message: err.message || "Erro ao completar sessão",
-                confirmLabel: "OK",
-                onConfirm: () => setDialog(null),
-            });
-        } finally {
-            setCompleting(null);
         }
     }
 
@@ -121,6 +96,9 @@ export default function ProtocolsPage() {
                         <div>
                             <h1 className="text-3xl font-bold text-sage-700 dark:text-white">Protocolos</h1>
                             <p className="text-sage-500 dark:text-zinc-500 mt-1">Planos de tratamento estruturados em ciclos e sessões.</p>
+                            <p className="mt-1 text-sm text-sage-600">
+                                As sessões contam sozinhas quando o atendimento é concluído na agenda.
+                            </p>
                         </div>
                     </div>
                     <Link
@@ -151,7 +129,6 @@ export default function ProtocolsPage() {
                     <div className="space-y-6">
                         {protocols.map((protocol: any) => {
                             const progress = totalProgress(protocol);
-                            const isCompleting = completing === protocol.id;
 
                             return (
                                 <div key={protocol.id} className="rounded-[2.5rem] border border-sage-200 bg-white p-8 wellness-shadow dark:border-zinc-900 dark:bg-zinc-900/40">
@@ -182,17 +159,6 @@ export default function ProtocolsPage() {
                                         {/* Botões de ação - só para protocolos ativos */}
                                         {protocol.isActive && (
                                             <div className="flex items-center gap-3">
-                                                <button
-                                                    onClick={() => completeSession(protocol.id)}
-                                                    disabled={isCompleting}
-                                                    className="flex items-center gap-2 rounded-2xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-secondary disabled:opacity-50 transition-all"
-                                                >
-                                                    {isCompleting
-                                                        ? <Loader2 size={16} className="animate-spin" />
-                                                        : <CheckCircle size={16} />
-                                                    }
-                                                    Completar Sessão
-                                                </button>
                                                 <button
                                                     onClick={() => deactivateProtocol(protocol.id)}
                                                     className="flex items-center gap-2 rounded-2xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/10 transition-all"

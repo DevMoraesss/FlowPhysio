@@ -183,6 +183,31 @@ public class AppointmentsController : ControllerBase
         if (request.PaymentMethod.HasValue && finalPaymentStatus != PaymentStatus.Paid)
             return BadRequest(new { message = "A forma de pagamento só pode ser registrada quando a sessão estiver paga" });
 
+        // A sessão concluída conta no protocolo ativo do paciente. Este é o único caminho de
+        // contagem: antes existia também um botão manual na tela de protocolos, e a mesma
+        // sessão podia ser contada duas vezes.
+        bool completing = request.Status == AppointmentStatus.Completed
+                          && appointment.Status != AppointmentStatus.Completed;
+        if (completing && appointment.ProtocolId == null)
+        {
+            var activeProtocols = (await _protocolRepository.GetActiveByPatientAsync(appointment.PatientId)).ToList();
+
+            if (request.ProtocolId.HasValue)
+            {
+                if (activeProtocols.All(p => p.Id != request.ProtocolId.Value))
+                    return BadRequest(new { message = "Esse protocolo não está entre os ativos do paciente" });
+                appointment.ProtocolId = request.ProtocolId.Value;
+            }
+            else if (activeProtocols.Count == 1)
+            {
+                appointment.ProtocolId = activeProtocols[0].Id;
+            }
+            else if (activeProtocols.Count > 1)
+            {
+                return BadRequest(new { message = "O paciente tem mais de um protocolo ativo. Escolha em qual esta sessão conta" });
+            }
+        }
+
         // Validar conflito se o horário estiver sendo alterado
         if (request.StartDateTime.HasValue || request.EndDateTime.HasValue)
         {
