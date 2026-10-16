@@ -1,10 +1,13 @@
+using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PhysioFlow.Api.DTOs;
 using PhysioFlow.Api.Services;
 using PhysioFlow.Domain.Interfaces;
 using PhysioFlow.Infrastructure.Data;
@@ -121,6 +124,25 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+    };
+
+    // O token vale 24h. Sem esta checagem, uma conta desativada continuaria entrando até o
+    // token vencer. Aqui cada requisição confere no banco se a conta ainda existe, está ativa e
+    // tem o mesmo perfil que o token diz. Token antigo, sem perfil, também cai aqui e pede login.
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var idClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleClaim = context.Principal?.FindFirst(ClaimTypes.Role)?.Value;
+            var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+            var user = Guid.TryParse(idClaim, out var id) ? await users.GetByIdAsync(id) : null;
+
+            if (user == null || !user.IsActive || user.Role.ToString() != roleClaim)
+                context.Fail("Conta desativada ou perfil diferente do token");
+            else
+                context.HttpContext.Items["MustChangePassword"] = user.MustChangePassword;
+        }
     };
 });
 
@@ -240,6 +262,26 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Senha provisória: enquanto a pessoa não trocar, a conta só abre o próprio perfil e a troca de
+// senha. Assim quem definiu a provisória (o administrador) não consegue usá-la para ver dados
+// clínicos sem que a dona da conta perceba: para passar daqui ele teria de trocar a senha, e ela
+// deixaria de conseguir entrar.
+app.Use(async (context, next) =>
+{
+    var mustChange = context.Items["MustChangePassword"] is true;
+    if (mustChange && !context.Request.Path.StartsWithSegments("/api/users/me"))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            message = "Troque a senha provisória para continuar.",
+            code = "password_change_required"
+        });
+        return;
+    }
+    await next();
+});
+
 app.MapControllers();
 
 // Health check endpoint
@@ -250,6 +292,25 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PhysioFlowDbContext>();
     db.Database.Migrate();
+
+    // Primeiro administrador. Sem cadastro público, alguém precisa existir para criar as contas.
+    // E-mail e senha vêm das variáveis de ambiente Admin__Email e Admin__Password, nunca do código.
+    // Senha fraca não derruba a API, porque a fisioterapeuta usa o sistema todo dia: só avisa
+    // no log e não cria a conta.
+    var adminEmail = app.Configuration["Admin:Email"];
+    var adminPassword = app.Configuration["Admin:Password"];
+    if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
+    {
+        if (adminPassword.Length < PasswordRules.MinLength || !Regex.IsMatch(adminPassword, PasswordRules.Pattern))
+        {
+            app.Logger.LogWarning("Admin__Password não segue a regra de senha. O administrador não foi criado.");
+        }
+        else
+        {
+            var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+            await auth.EnsureAdministratorAsync(adminEmail, adminPassword);
+        }
+    }
 }
 
 // Usa a porta injetada pelo Railway (ou 8080 por padrão)

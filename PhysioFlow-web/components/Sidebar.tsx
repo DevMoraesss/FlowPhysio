@@ -12,9 +12,11 @@ import {
     ChevronRight,
     Settings,
     Bell,
-    DollarSign
+    DollarSign,
+    UserCog
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { clearSession, ADMIN_ROLE } from "@/lib/session";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -27,13 +29,7 @@ export function Sidebar() {
     }, []);
 
     const handleLogout = () => {
-        // Apaga do localStorage
-        localStorage.removeItem("physioflow_token");
-        localStorage.removeItem("physioflow_user");
-
-        // Apaga o cookie (max-age=0 faz expirar imediatamente)
-        document.cookie = "physioflow_token=; path=/; max-age=0";
-
+        clearSession();
         router.push("/login");
     };
 
@@ -46,6 +42,12 @@ export function Sidebar() {
         { icon: <DollarSign size={20} />, label: "Pagamentos", href: "/payments" },
     ];
 
+    // O administrador só gerencia contas: o menu dele não tem nenhuma tela clínica
+    const isAdmin = user?.role === ADMIN_ROLE;
+    const items = isAdmin
+        ? [{ icon: <UserCog size={20} />, label: "Contas", href: "/admin" }]
+        : navItems;
+
     return (
         <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-sage-200 bg-white dark:bg-zinc-950 dark:border-zinc-900 transition-all duration-300">
             <div className="flex h-full flex-col px-4 py-6">
@@ -55,7 +57,7 @@ export function Sidebar() {
                 </div>
 
                 <nav className="flex-1 space-y-1">
-                    {navItems.map((item) => {
+                    {items.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
@@ -83,17 +85,19 @@ export function Sidebar() {
                         </div>
                         <div className="ml-3 overflow-hidden">
                             <p className="truncate text-sm font-semibold text-sage-700 dark:text-white">{user?.fullName || "Fisioterapeuta"}</p>
-                            <p className="truncate text-xs text-sage-500 dark:text-zinc-500 italic">Fisioterapeuta</p>
+                            <p className="truncate text-xs text-sage-500 dark:text-zinc-500 italic">{isAdmin ? "Administrador" : "Fisioterapeuta"}</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                        <Link
-                            href="/settings"
-                            className="flex items-center justify-center rounded-xl p-2.5 text-sage-500 hover:bg-sage-100 hover:text-sage-700 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 transition-all"
-                        >
-                            <Settings size={20} />
-                        </Link>
+                    <div className={`grid gap-2 ${isAdmin ? "grid-cols-1" : "grid-cols-2"}`}>
+                        {!isAdmin && (
+                            <Link
+                                href="/settings"
+                                className="flex items-center justify-center rounded-xl p-2.5 text-sage-500 hover:bg-sage-100 hover:text-sage-700 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300 transition-all"
+                            >
+                                <Settings size={20} />
+                            </Link>
+                        )}
                         <button
                             onClick={handleLogout}
                             className="flex items-center justify-center rounded-xl p-2.5 text-sage-500 hover:bg-red-50 hover:text-red-500 dark:text-zinc-500 dark:hover:bg-red-500/10 dark:hover:text-red-500 transition-all"

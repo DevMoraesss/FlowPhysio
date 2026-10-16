@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Lock, Mail, Loader2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { apiFetch } from "@/lib/api";
+import { saveSession, homeFor } from "@/lib/session";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -25,11 +25,9 @@ export default function LoginPage() {
                 body: JSON.stringify({ email, password }),
             });
 
-            localStorage.setItem("physioflow_token", data.accessToken);
-            localStorage.setItem("physioflow_user", JSON.stringify(data.user));
-            document.cookie = `physioflow_token=${data.accessToken}; path=/; max-age=86400`;
-
-            router.push("/dashboard");
+            saveSession(data);
+            // Senha definida pelo administrador é provisória: primeiro a pessoa cria a dela
+            router.push(data.user.mustChangePassword ? "/change-password" : homeFor(data.user.role));
         } catch (err: any) {
             setError(err.message || "Email ou senha incorretos");
         } finally {
@@ -112,11 +110,8 @@ export default function LoginPage() {
                         ) : "Entrar"}
                     </button>
 
-                    <p className="text-center text-sm text-sage-400">
-                        Não tem uma conta?{" "}
-                        <Link href="/register" className="font-bold text-brand-primary hover:text-brand-secondary transition-colors">
-                            Criar conta
-                        </Link>
+                    <p className="text-center text-sm text-sage-500">
+                        Não tem uma conta? Fale com o administrador do sistema.
                     </p>
                 </form>
             </div>

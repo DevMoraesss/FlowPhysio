@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Enums;
 
 namespace PhysioFlow.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+// Só o perfil Fisioterapeuta. O administrador recebe 403 aqui: ele gerencia contas, não vê pacientes
+[Authorize(Roles = nameof(UserRole.Physiotherapist))]
 public class ProtocolsController : ControllerBase
 {
     private readonly IProtocolRepository _protocolRepository;

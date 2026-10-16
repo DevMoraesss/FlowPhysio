@@ -257,14 +257,23 @@ User (Fisioterapeuta)
 ### Auth
 | Método | Rota | Descrição |
 |---|---|---|
-| POST | /api/auth/register | Criar conta de fisioterapeuta |
-| POST | /api/auth/login | Login → retorna `{ accessToken }` |
+| POST | /api/auth/login | Login → retorna `{ accessToken, user }`, com o perfil em `user.role` |
+
+### Contas (só o perfil Administrador)
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | /api/admin/users | Listar as contas |
+| POST | /api/admin/users | Criar conta de fisioterapeuta |
+| PATCH | /api/admin/users/{id}/deactivate | Desativar conta |
+| PATCH | /api/admin/users/{id}/activate | Reativar conta |
+| PUT | /api/admin/users/{id}/password | Definir senha provisória |
 
 ### Usuário (Perfil)
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | /api/users/me | Dados do fisioterapeuta logado |
 | PUT | /api/users/me | Atualizar nome, telefone, CPF, CREFITO |
+| PUT | /api/users/me/password | Trocar a própria senha. Única rota liberada enquanto a senha for provisória |
 
 ### Pacientes
 | Método | Rota | Descrição |
@@ -355,7 +364,7 @@ User (Fisioterapeuta)
 
 ```
 /login                                   ← autenticação
-/register                                ← cadastro de fisioterapeuta
+/admin                                   ← contas (só o perfil Administrador)
 /dashboard                               ← painel do dia
 /schedule                                ← agenda (FullCalendar)
 /schedule/new                            ← novo agendamento
@@ -380,9 +389,10 @@ User (Fisioterapeuta)
 - Token salvo em `localStorage` + cookie após login
 - Redireciona para `/dashboard`
 
-### `/register` — Cadastro
-- Campos: Nome completo, Email, Senha, CREFITO (opcional)
-- Após cadastro → redireciona para `/login`
+### `/admin` — Contas (perfil Administrador)
+- Tabela das contas: nome, e-mail, CREFITO, perfil e situação
+- Nova conta de fisioterapeuta com senha provisória, desativar, reativar e redefinir senha
+- Não existe cadastro público: conta nova só nasce aqui
 
 ### `/dashboard` — Painel do Dia
 **Cards de métricas:**

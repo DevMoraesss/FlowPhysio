@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound();
 
-        return Ok(MapToResponse(user));
+        return Ok(UserResponse.From(user));
     }
 
     [HttpPut("me")]
@@ -61,26 +61,37 @@ public class UsersController : ControllerBase
         if (request.Crefito != null) user.Crefito = request.Crefito;
 
         await _userRepository.UpdateAsync(user);
-        return Ok(MapToResponse(user));
+        return Ok(UserResponse.From(user));
+    }
+
+    /// <summary>
+    /// Troca a própria senha. Vale para os dois perfis e é a única rota liberada enquanto a senha
+    /// for provisória. Pede a senha atual: quem pegou o computador com a sessão aberta não troca.
+    /// </summary>
+    [HttpPut("me/password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var user = await _userRepository.GetByIdAsync(GetCurrentUserId());
+        if (user == null)
+            return NotFound();
+
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            return BadRequest(new { message = "A senha atual não confere" });
+
+        if (request.CurrentPassword == request.NewPassword)
+            return BadRequest(new { message = "A nova senha precisa ser diferente da atual" });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.MustChangePassword = false;
+        await _userRepository.UpdateAsync(user);
+        return NoContent();
     }
 
     private Guid GetCurrentUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier);
         return Guid.Parse(claim!.Value);
-    }
-
-    private static UserResponse MapToResponse(User user)
-    {
-        return new UserResponse
-        {
-            Id = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            Phone = user.Phone,
-            Cpf = user.Cpf,
-            Crefito = user.Crefito,
-            CreatedAt = user.CreatedAt
-        };
     }
 }
