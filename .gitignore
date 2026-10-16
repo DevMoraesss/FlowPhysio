@@ -88,3 +88,6 @@ yarn-error.log
 
 # appsettings
 src/PhysioFlow.Api/appsettings.Production.json
+
+# Capturas de tela da skill edna
+capturas/

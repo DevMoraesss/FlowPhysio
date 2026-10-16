@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PhysioFlow.Api.DTOs;
 using PhysioFlow.Domain.Enums;
 using PhysioFlow.Domain.Interfaces;
+using PhysioFlow.Domain.Time;
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -25,17 +26,19 @@ public class DashboardController : ControllerBase
     public async Task<ActionResult<DashboardResponse>> GetToday()
     {
         var physioId = GetCurrentUserId();
-        var today = DateTime.UtcNow.Date;
-        var tomorrow = today.AddDays(1);
+        // "Hoje" é o dia de São Paulo, não o de UTC. Antes, depois das 21h o painel já mostrava
+        // a agenda do dia seguinte.
+        var today = ClinicClock.Today();
+        var (startUtc, endUtc) = ClinicClock.DayInUtc(today);
 
         var appointments = await _appointmentRepository.GetByDateRangeAsync(
-            physioId, today, tomorrow);
+            physioId, startUtc, endUtc);
 
         var list = appointments.ToList();
 
         var response = new DashboardResponse
         {
-            Date = DateOnly.FromDateTime(DateTime.UtcNow),
+            Date = today,
             TotalAppointments = list.Count,
             Completed = list.Count(a => a.Status == AppointmentStatus.Completed),
             Scheduled = list.Count(a => a.Status == AppointmentStatus.Scheduled),

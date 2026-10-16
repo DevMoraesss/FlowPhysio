@@ -11,6 +11,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { formatPaymentDay } from "@/lib/paymentDay";
+import { todayLocal } from "@/lib/dates";
 
 const cycleLabel: Record<number, string> = {
     1: "Por Sessão",
@@ -23,7 +24,7 @@ function NewAppointmentForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const prefilledPatientId = searchParams.get("patientId") ?? "";
-    const prefilledDate = searchParams.get("date") ?? new Date().toISOString().split("T")[0];
+    const prefilledDate = searchParams.get("date") ?? todayLocal();
 
     const [patients, setPatients] = useState<any[]>([]);
     const [loadingPatients, setLoadingPatients] = useState(true);

@@ -177,6 +177,12 @@ public class AppointmentsController : ControllerBase
                 return BadRequest(new { message = "Informe o status de pagamento ao concluir a sessão" });
         }
 
+        // RN15: forma de pagamento só existe em sessão paga. Antes dava para gravar Pix numa
+        // sessão ainda pendente (defeito D01 do plano de testes, caso CT06.03).
+        var finalPaymentStatus = request.PaymentStatus ?? appointment.PaymentStatus;
+        if (request.PaymentMethod.HasValue && finalPaymentStatus != PaymentStatus.Paid)
+            return BadRequest(new { message = "A forma de pagamento só pode ser registrada quando a sessão estiver paga" });
+
         // Validar conflito se o horário estiver sendo alterado
         if (request.StartDateTime.HasValue || request.EndDateTime.HasValue)
         {
@@ -203,6 +209,8 @@ public class AppointmentsController : ControllerBase
         if (request.Status.HasValue) appointment.Status = request.Status.Value;
         if (request.PaymentStatus.HasValue) appointment.PaymentStatus = request.PaymentStatus.Value;
         if (request.PaymentMethod.HasValue) appointment.PaymentMethod = request.PaymentMethod.Value;
+        // Pagamento desfeito ou isento: a forma registrada antes deixa de valer
+        if (appointment.PaymentStatus != PaymentStatus.Paid) appointment.PaymentMethod = null;
         if (request.SessionValue.HasValue) appointment.SessionValue = request.SessionValue.Value;
         if (request.RequiresReceipt.HasValue) appointment.RequiresReceipt = request.RequiresReceipt.Value;
         if (request.Notes != null) appointment.Notes = request.Notes;

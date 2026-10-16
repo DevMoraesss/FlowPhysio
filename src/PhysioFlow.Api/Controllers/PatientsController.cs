@@ -6,6 +6,7 @@ using PhysioFlow.Domain.Entities;
 using PhysioFlow.Domain.Interfaces;
 using PhysioFlow.Domain.Enums;
 using PhysioFlow.Domain.Validation;
+using PhysioFlow.Domain.Time;
 
 namespace PhysioFlow.Api.Controllers;
 
@@ -244,7 +245,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
         // Menor de 18 anos deve ter responsável legal (mesma regra do cadastro).
         // Só vale quando existe data de nascimento: no pré-cadastro ela ainda é
         // desconhecida, então não há como aferir a idade.
-        var age = patient.AgeInYears(DateOnly.FromDateTime(DateTime.UtcNow));
+        var age = patient.AgeInYears(ClinicClock.Today());
         if (age is < 18 && patient.GuardianId == null)
             return BadRequest(new { message = "Paciente menor de 18 anos deve ter um responsável legal" });
 
@@ -323,7 +324,7 @@ public async Task<ActionResult<PatientResponse>> Create([FromBody] CreatePatient
 
     private static int CalculateAge(DateOnly birthDate)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = ClinicClock.Today();
         var age = today.Year - birthDate.Year;
         if (birthDate.AddYears(age) > today) age--;
         return age;
