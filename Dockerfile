@@ -2,14 +2,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copy solution and project files
-COPY PhysioFlow.sln ./
+# Copy project files
 COPY src/PhysioFlow.Api/PhysioFlow.Api.csproj ./src/PhysioFlow.Api/
 COPY src/PhysioFlow.Domain/PhysioFlow.Domain.csproj ./src/PhysioFlow.Domain/
 COPY src/PhysioFlow.Infrastructure/PhysioFlow.Infrastructure.csproj ./src/PhysioFlow.Infrastructure/
 
-# Restore dependencies
-RUN dotnet restore
+# Restaura só a API, que puxa Domain e Infrastructure junto. Restaurar a solução inteira
+# quebrava aqui: ela lista o projeto de testes, que não entra na imagem de produção.
+RUN dotnet restore src/PhysioFlow.Api/PhysioFlow.Api.csproj
 
 # Copy source code
 COPY src/ ./src/
