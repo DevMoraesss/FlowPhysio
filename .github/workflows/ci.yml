@@ -72,3 +72,17 @@ jobs:
 
       - name: Compilar
         run: npm run build
+
+  # O Railway não usa a compilação acima: ele monta a imagem pelo Dockerfile, que copia só
+  # parte do repositório. Em setembro os testes entraram, o CI passou e o deploy quebrou,
+  # porque o Dockerfile não conhecia a pasta tests. Este job monta a mesma imagem, para
+  # esse tipo de erro aparecer na PR e não depois do merge.
+  docker:
+    name: Imagem Docker (a mesma do Railway)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Montar a imagem
+        run: docker build -t physioflow-api .
