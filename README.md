@@ -480,6 +480,18 @@ trocar por uma dela em `PUT /api/users/me/password`, qualquer outra rota respond
 
 ---
 
+### Relatórios
+
+| Método | Endpoint                                   | Descrição                                         | Auth |
+|--------|--------------------------------------------|---------------------------------------------------|------|
+| GET    | /api/reports/monthly?year=2026&month=10    | Fechamento do mês: sessões, faltas e valores por paciente e por forma de pagamento | ✅ |
+
+O mês é o de São Paulo. Recebido soma as sessões concluídas do mês que estão pagas (o sistema não
+guarda o dia do pagamento); a receber soma as concluídas pendentes. As contas ficam na classe
+`MonthlyReport`, no domínio, com testes próprios.
+
+---
+
 ### Anexos
 
 | Método | Endpoint                              | Descrição                         | Auth |

@@ -348,6 +348,11 @@ User (Fisioterapeuta)
 | GET | /api/dashboard | Resumo do dia: totais, receita, lista de sessões |
 | GET | /api/dashboard/no-shows | Pacientes que faltaram e não remarcaram |
 
+### Relatórios
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | /api/reports/monthly?year=&month= | Fechamento do mês: sessões, faltas, recebido e a receber por paciente e por forma de pagamento |
+
 ### Anexos
 | Método | Rota | Descrição |
 |---|---|---|
@@ -366,6 +371,7 @@ User (Fisioterapeuta)
 /login                                   ← autenticação
 /admin                                   ← contas (só o perfil Administrador)
 /dashboard                               ← painel do dia
+/reports                                 ← fechamento do mês, com impressão em PDF
 /schedule                                ← agenda (FullCalendar)
 /schedule/new                            ← novo agendamento
 /patients                                ← lista de pacientes
