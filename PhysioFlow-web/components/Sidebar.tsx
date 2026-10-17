@@ -13,7 +13,8 @@ import {
     Settings,
     Bell,
     DollarSign,
-    UserCog
+    UserCog,
+    FileChartColumn
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { clearSession, ADMIN_ROLE } from "@/lib/session";
@@ -40,6 +41,7 @@ export function Sidebar() {
         { icon: <Calendar size={20} />, label: "Agenda", href: "/schedule" },
         { icon: <ClipboardList size={20} />, label: "Prontuários", href: "/records" },
         { icon: <DollarSign size={20} />, label: "Pagamentos", href: "/payments" },
+        { icon: <FileChartColumn size={20} />, label: "Relatórios", href: "/reports" },
     ];
 
     // O administrador só gerencia contas: o menu dele não tem nenhuma tela clínica
@@ -49,7 +51,7 @@ export function Sidebar() {
         : navItems;
 
     return (
-        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-sage-200 bg-white dark:bg-zinc-950 dark:border-zinc-900 transition-all duration-300">
+        <aside className="print:hidden fixed left-0 top-0 z-40 h-screen w-64 border-r border-sage-200 bg-white dark:bg-zinc-950 dark:border-zinc-900 transition-all duration-300">
             <div className="flex h-full flex-col px-4 py-6">
                 <div className="mb-10 flex items-center px-2">
                     <Logo size={40} className="mr-3 rounded-2xl" />

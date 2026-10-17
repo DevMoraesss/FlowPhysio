@@ -28,6 +28,13 @@ public static class ClinicClock
                 TimeZoneInfo.ConvertTimeToUtc(start.AddDays(1), Zone));
     }
 
+    /// <summary>Começo e fim, em UTC, de um mês do consultório. Usado pelo fechamento do mês.</summary>
+    public static (DateTime StartUtc, DateTime EndUtc) MonthInUtc(int year, int month)
+    {
+        var first = new DateOnly(year, month, 1);
+        return (DayInUtc(first).StartUtc, DayInUtc(first.AddMonths(1)).StartUtc);
+    }
+
     private static TimeZoneInfo FindZone()
     {
         try

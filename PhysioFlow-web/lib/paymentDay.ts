@@ -3,6 +3,10 @@
 // - Semanal (4): dia da semana (1=segunda ... 7=domingo)
 // - Por Sessão (1): não se aplica (null)
 
+export const CYCLE_LABELS: Record<number, string> = {
+    1: "Por sessão", 2: "Quinzenal", 3: "Mensal", 4: "Semanal",
+};
+
 export const WEEKDAY_LABELS: Record<number, string> = {
     1: "segunda", 2: "terça", 3: "quarta", 4: "quinta",
     5: "sexta", 6: "sábado", 7: "domingo",

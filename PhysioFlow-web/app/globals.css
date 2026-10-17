@@ -106,3 +106,14 @@
   box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.06);
   @apply bg-white dark:bg-zinc-950;
 }
+
+/* Impressão (relatório): margem de folha e fundo branco. O que some no papel usa print:hidden */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: white;
+  }
+}
