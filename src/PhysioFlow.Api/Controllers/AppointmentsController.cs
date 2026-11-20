@@ -128,15 +128,26 @@ public class AppointmentsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<AppointmentResponse>> Create([FromBody] CreateAppointmentRequest request)
     {
+        var physioId = GetCurrentUserId();
+
+        // Paciente de outra profissional responde 404, como nas outras rotas: assim a API não
+        // confirma que aquele Id existe. A conferência vem antes da de inativo pelo mesmo motivo.
         var patient = await _patientRepository.GetByIdAsync(request.PatientId);
-        if (patient == null)
+        if (patient == null || patient.PhysioId != physioId)
             return NotFound(new { message = "Paciente não encontrado" });
 
         if (!patient.IsActive)
         return BadRequest(new { message = "Não é possível agendar para um paciente inativo" });
 
+        // O protocolo informado tem de ser deste paciente. Sem isso, ao concluir a sessão ela
+        // contaria no protocolo de outra pessoa.
+        if (request.ProtocolId.HasValue)
+        {
+            var protocol = await _protocolRepository.GetByIdAsync(request.ProtocolId.Value);
+            if (protocol == null || protocol.PatientId != patient.Id)
+                return NotFound(new { message = "Protocolo não encontrado" });
+        }
 
-        var physioId = GetCurrentUserId();
         var startUtc = DateTime.SpecifyKind(request.StartDateTime, DateTimeKind.Utc);
         var endUtc = DateTime.SpecifyKind(request.EndDateTime, DateTimeKind.Utc);
 
